@@ -1,6 +1,7 @@
 "use client"
 import Link from "next/link"
 import { MapPinned } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 export function PublicNav() {
   return (
@@ -10,8 +11,7 @@ export function PublicNav() {
           <MapPinned className="h-6 w-6 text-primary mr-1" />
           <span className="font-extrabold text-blue-700 dark:text-blue-400 text-2xl">FleetFusion</span>
         </Link>
-      </div>
-      <nav className="flex items-center gap-6">
+      </div>      <nav className="flex items-center gap-6">
         <Link className="text-sm font-medium hover:underline underline-offset-4" href="/features">
           
           Features
@@ -22,9 +22,11 @@ export function PublicNav() {
         <Link className="text-sm font-medium hover:underline underline-offset-4" href="/about">
           About
         </Link>
-        <Link className="text-sm font-medium hover:underline underline-offset-4" href="/dashboard">
-          Dashboard
-        </Link>
+        <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
+          <Link href="/sign-in">
+            Sign In
+          </Link>
+        </Button>
       </nav>
     </header>
   )

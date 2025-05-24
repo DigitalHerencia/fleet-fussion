@@ -38,7 +38,7 @@ export function UserNav() {
             aria-label="Open user menu"
           >
             <Avatar className="h-10 w-10">
-              <AvatarImage src="/placeholder-user.png" alt={user.name} />
+              <AvatarImage src="/black_logo.png" alt={user.name} />
               <AvatarFallback>
                 <User className="h-5 w-5 text-muted-foreground" />
               </AvatarFallback>
@@ -50,7 +50,7 @@ export function UserNav() {
         <DropdownMenuContent className="w-64 p-2" align="end" forceMount>
           <div className="flex items-center gap-3 px-2 py-2">
             <Avatar className="h-10 w-10">
-              <AvatarImage src="/placeholder-user.png" alt={user.name} />
+              <AvatarImage src="/black_logo.png" alt={user.name} />
               <AvatarFallback>
                 <User className="h-5 w-5 text-muted-foreground" />
               </AvatarFallback>

@@ -56,7 +56,7 @@ export async function getKPIs(organizationId: string) {
 
 // Get loads for the dispatch board
 export async function getLoads(organizationId: string, status?: string, driverId?: string) {
-  const query = db.query.loads.findMany({
+  const results = await db.query.loads.findMany({
     where: (loads, { eq, and }) => {
       const conditions = [eq(loads.organizationId, organizationId)]
 
@@ -88,12 +88,22 @@ export async function getLoads(organizationId: string, status?: string, driverId
     orderBy: (loads, { desc }) => [desc(loads.createdAt)],
   })
 
-  return query
+  // Map database fields to interface fields
+  return results.map(load => ({
+    ...load,
+    pickupDate: load.scheduledPickupDate || load.createdAt,
+    deliveryDate: load.scheduledDeliveryDate || load.createdAt,
+    referenceNumber: load.referenceNumber || load.loadNumber,
+    customerName: load.customerName || 'Unknown Customer',
+    commodity: load.commodity || undefined,
+    weight: load.weight || undefined,
+    rate: load.rate ? Number(load.rate) : undefined,
+  }))
 }
 
 // Get vehicles with their status
 export async function getVehicles(organizationId: string, status?: string) {
-  const query = db.query.vehicles.findMany({
+  const results = await db.query.vehicles.findMany({
     where: (vehicles, { eq, and }) => {
       const conditions = [eq(vehicles.organizationId, organizationId)]
 
@@ -106,12 +116,17 @@ export async function getVehicles(organizationId: string, status?: string) {
     orderBy: (vehicles, { asc }) => [asc(vehicles.unitNumber)],
   })
 
-  return query
+  // Ensure consistent typing (null to undefined mapping if needed)
+  return results.map(vehicle => ({
+    ...vehicle,
+    make: vehicle.make ?? undefined,
+    model: vehicle.model ?? undefined,
+  }))
 }
 
 // Get drivers with their status and assignment info
 export async function getDrivers(organizationId: string, status?: string) {
-  const query = db.query.drivers.findMany({
+  const results = await db.query.drivers.findMany({
     where: (drivers, { eq, and }) => {
       const conditions = [eq(drivers.organizationId, organizationId)]
 
@@ -124,5 +139,10 @@ export async function getDrivers(organizationId: string, status?: string) {
     orderBy: (drivers, { asc }) => [asc(drivers.lastName), asc(drivers.firstName)],
   })
 
-  return query
+  // Ensure consistent typing (null to undefined mapping if needed)
+  return results.map(driver => ({
+    ...driver,
+    email: driver.email ?? undefined,
+    phone: driver.phone ?? undefined,
+  }))
 }

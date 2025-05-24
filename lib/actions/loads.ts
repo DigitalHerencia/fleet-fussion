@@ -55,13 +55,11 @@ const loadSchema = z.object({
   originZip: z.string().min(1, "Origin ZIP is required"),
   destinationAddress: z.string().min(1, "Destination address is required"),
   destinationCity: z.string().min(1, "Destination city is required"),
-  destinationState: z.string().min(1, "Destination state is required"),
-  destinationZip: z.string().min(1, "Destination ZIP is required"),
+  destinationState: z.string().min(1, "Destination state is required"),  destinationZip: z.string().min(1, "Destination ZIP is required"),
   scheduledPickupDate: z.string().optional(),
-  scheduledDeliveryDate: z.string().optional(),
-  commodity: z.string().optional(),
+  scheduledDeliveryDate: z.string().optional(),  commodity: z.string().optional(),
   weight: z.number().optional(),
-  rate: z.number().optional(),
+  rate: z.string().optional(),
   estimatedMiles: z.number().optional(),
   notes: z.string().optional(),
   instructions: z.string().optional(),
@@ -97,11 +95,10 @@ export async function createLoad(formData: FormData) {
       destinationCity: formData.get("destinationCity"),
       destinationState: formData.get("destinationState"),
       destinationZip: formData.get("destinationZip"),
-      scheduledPickupDate: formData.get("scheduledPickupDate"),
-      scheduledDeliveryDate: formData.get("scheduledDeliveryDate"),
-      commodity: formData.get("commodity"),
-      weight: formData.get("weight") ? Number(formData.get("weight")) : undefined,
-      rate: formData.get("rate") ? Number(formData.get("rate")) : undefined,
+      scheduledPickupDate: formData.get("pickupDate"),
+      scheduledDeliveryDate: formData.get("deliveryDate"),
+      commodity: formData.get("commodity"),      weight: formData.get("weight") ? Number(formData.get("weight")) : undefined,
+      rate: formData.get("rate"),
       estimatedMiles: formData.get("estimatedMiles") ? Number(formData.get("estimatedMiles")) : undefined,
       notes: formData.get("notes"),
       instructions: formData.get("instructions"),
@@ -112,12 +109,15 @@ export async function createLoad(formData: FormData) {
     const scheduledDeliveryDateForDb = validatedFields.scheduledDeliveryDate ? new Date(validatedFields.scheduledDeliveryDate) : null
 
     // Destructure validatedFields to exclude the original string date properties
-    const { scheduledPickupDate, scheduledDeliveryDate, ...restOfValidatedFields } = validatedFields
-
-    // Generate a loadNumber (replace with your own logic if needed)
-    const loadNumber = `LD-${Date.now()}`
-
-    
+    const { scheduledPickupDate, scheduledDeliveryDate, ...restOfValidatedFields } = validatedFields    // Generate a loadNumber (replace with your own logic if needed)
+    const loadNumber = `LD-${Date.now()}`    // Insert the load into the database
+    const [newLoad] = await db.insert(loads).values({
+      ...restOfValidatedFields,
+      loadNumber,
+      organizationId: user.organizationId,
+      scheduledPickupDate: scheduledPickupDateForDb,
+      scheduledDeliveryDate: scheduledDeliveryDateForDb,
+    }).returning()
 
     revalidatePath("/dispatch")
     revalidatePath("/loads")
@@ -125,7 +125,7 @@ export async function createLoad(formData: FormData) {
     return {
       success: true,
       message: "Load created successfully",
-      
+      data: newLoad
     }
   } catch (error) {
     console.error("Error creating load:", error)
@@ -172,12 +172,10 @@ export async function updateLoad(id: string, formData: FormData) {
       destinationAddress: formData.get("destinationAddress"),
       destinationCity: formData.get("destinationCity"),
       destinationState: formData.get("destinationState"),
-      destinationZip: formData.get("destinationZip"),
-      scheduledPickupDate: formData.get("scheduledPickupDate"),
-      scheduledDeliveryDate: formData.get("scheduledDeliveryDate"),
+      destinationZip: formData.get("destinationZip"),      scheduledPickupDate: formData.get("pickupDate"),      scheduledDeliveryDate: formData.get("deliveryDate"),
       commodity: formData.get("commodity"),
       weight: formData.get("weight") ? Number(formData.get("weight")) : undefined,
-      rate: formData.get("rate") ? Number(formData.get("rate")) : undefined,
+      rate: formData.get("rate"),
       estimatedMiles: formData.get("estimatedMiles") ? Number(formData.get("estimatedMiles")) : undefined,
       notes: formData.get("notes"),
       instructions: formData.get("instructions"),

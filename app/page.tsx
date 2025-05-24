@@ -3,6 +3,7 @@ import { ArrowRight, Truck, Shield, BarChart3, FileText, MapPin, Users, Calendar
 import PricingSection from "@/components/pricing/pricing-section"
 import { SharedFooter } from "@/components/shared/shared-footer"
 import Image from "next/image"
+import Link from "next/link"
 import { PublicNav } from "@/components/shared/public-nav"
 
 export default function Home() {
@@ -33,12 +34,14 @@ export default function Home() {
                   <p className="max-w-[600px] text-muted-foreground md:text-xl text-white/90 lg:text-muted-foreground">
                     FleetFusion unifies dispatch, compliance, and real‑time analytics so you can get freight out the door—faster, safer, smarter.
                   </p>
-                </div>
-                <div className="flex flex-col gap-2 min-[400px]:flex-row">
+                </div>                <div className="flex flex-col gap-2 min-[400px]:flex-row">
                   <Button
+                    asChild
                     className="w-full py-2 rounded-lg font-semibold text-white bg-blue-400 hover:bg-blue-700 transition-colors"
                   >
-                    Start Free 30-Day Trial <ArrowRight className="ml-2 h-4 w-4" />
+                    <Link href="/sign-up">
+                      Start Free 30-Day Trial <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
                   </Button>
                 </div>
               </div>

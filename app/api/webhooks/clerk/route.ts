@@ -48,14 +48,17 @@ export async function POST(request: NextRequest) {
         
       case 'organization.deleted':
         await OrganizationWebhookHandler.handleOrganizationDeleted(payload as OrganizationWebhookPayload)
+        break          // Organization membership events
+      case 'organizationMembership.created':
+        await OrganizationWebhookHandler.handleOrganizationMembershipCreated(payload as any)
         break
         
-      // Organization membership events
-      case 'organizationMembership.created':
       case 'organizationMembership.updated':
+        await OrganizationWebhookHandler.handleOrganizationMembershipUpdated(payload as any)
+        break
+        
       case 'organizationMembership.deleted':
-        // These events are handled through user events for simplicity
-        console.log(`Organization membership event ${eventType} - handled via user events`)
+        await OrganizationWebhookHandler.handleOrganizationMembershipDeleted(payload as any)
         break
         
       default:

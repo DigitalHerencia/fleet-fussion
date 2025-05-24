@@ -14,107 +14,85 @@ export type UserRole =
   | 'accountant'   // Can access IFTA reports and financial data
   | 'viewer'       // Read-only access
 
-// Permissions for granular access control
-export type Permission = 
-  // Fleet Management
-  | 'fleet:view'
-  | 'fleet:create'
-  | 'fleet:update'
-  | 'fleet:delete'
-  
-  // Driver Management
-  | 'drivers:view'
-  | 'drivers:create'
-  | 'drivers:update'
-  | 'drivers:delete'
-  
-  // Dispatch Operations
-  | 'dispatch:view'
-  | 'dispatch:create'
-  | 'dispatch:update'
-  | 'dispatch:delete'
-  | 'dispatch:assign'
-  
-  // Compliance Management
-  | 'compliance:view'
-  | 'compliance:create'
-  | 'compliance:update'
-  | 'compliance:delete'
-  
-  // Analytics & Reports
-  | 'analytics:view'
-  | 'reports:view'
-  | 'reports:generate'
-  
-  // IFTA Management
-  | 'ifta:view'
-  | 'ifta:create'
-  | 'ifta:update'
-  | 'ifta:submit'
-  
-  // Settings & Administration
-  | 'settings:view'
-  | 'settings:update'
-  | 'billing:view'
-  | 'billing:manage'
-  
-  // User Management
-  | 'users:view'
-  | 'users:invite'
-  | 'users:manage'
-  | 'users:remove'
+// Aligned permission structure with ABAC types
+export type Permission = string
 
-// Role-based permission mapping
+// Resource types for ABAC
+export type ResourceType = 
+  | 'user'
+  | 'driver'
+  | 'vehicle'
+  | 'load'
+  | 'document'
+  | 'ifta_report'
+  | 'organization'
+  | 'billing'
+
+// Permission actions for ABAC
+export type PermissionAction = 
+  | 'create'
+  | 'read'
+  | 'update'
+  | 'delete'
+  | 'manage'
+  | 'assign'
+  | 'approve'
+  | 'report'
+
+// Generate permission strings from resource and action
+export function createPermission(action: PermissionAction, resource: ResourceType): Permission {
+  return `${action}:${resource}`
+}
+
+// Role-based permission mapping using consistent structure
 export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   admin: [
-    // Full access to everything
-    'fleet:view', 'fleet:create', 'fleet:update', 'fleet:delete',
-    'drivers:view', 'drivers:create', 'drivers:update', 'drivers:delete',
-    'dispatch:view', 'dispatch:create', 'dispatch:update', 'dispatch:delete', 'dispatch:assign',
-    'compliance:view', 'compliance:create', 'compliance:update', 'compliance:delete',
-    'analytics:view', 'reports:view', 'reports:generate',
-    'ifta:view', 'ifta:create', 'ifta:update', 'ifta:submit',
-    'settings:view', 'settings:update', 'billing:view', 'billing:manage',
-    'users:view', 'users:invite', 'users:manage', 'users:remove'
+    // Full access to everything - generate all combinations
+    'create:user', 'read:user', 'update:user', 'delete:user', 'manage:user',
+    'create:driver', 'read:driver', 'update:driver', 'delete:driver', 'manage:driver',
+    'create:vehicle', 'read:vehicle', 'update:vehicle', 'delete:vehicle', 'manage:vehicle',
+    'create:load', 'read:load', 'update:load', 'delete:load', 'manage:load', 'assign:load',
+    'create:document', 'read:document', 'update:document', 'delete:document', 'approve:document',
+    'create:ifta_report', 'read:ifta_report', 'update:ifta_report', 'report:ifta_report',
+    'read:organization', 'update:organization', 'manage:organization',
+    'read:billing', 'manage:billing'
   ],
   
   dispatcher: [
-    'fleet:view', 'fleet:update',
-    'drivers:view', 'drivers:update',
-    'dispatch:view', 'dispatch:create', 'dispatch:update', 'dispatch:assign',
-    'analytics:view', 'reports:view',
-    'settings:view'
+    'read:vehicle', 'update:vehicle',
+    'read:driver', 'update:driver',
+    'create:load', 'read:load', 'update:load', 'assign:load',
+    'read:document', 'report:load'
   ],
   
   driver: [
-    'dispatch:view', // Only assigned loads
-    'compliance:view', // Own documents only
-    'settings:view' // Own profile only
+    'read:load', 'update:load', // Only assigned loads
+    'read:document', 'create:document', // Own documents only
+    'read:user' // Own profile only
   ],
   
   compliance: [
-    'fleet:view',
-    'drivers:view', 'drivers:update',
-    'compliance:view', 'compliance:create', 'compliance:update', 'compliance:delete',
-    'analytics:view', 'reports:view', 'reports:generate',
-    'settings:view'
+    'read:vehicle',
+    'read:driver', 'update:driver',
+    'create:document', 'read:document', 'update:document', 'delete:document', 'approve:document',
+    'report:document'
   ],
   
+    
   accountant: [
-    'fleet:view',
-    'analytics:view', 'reports:view', 'reports:generate',
-    'ifta:view', 'ifta:create', 'ifta:update', 'ifta:submit',
-    'settings:view'
+    'read:load',
+    'read:driver',
+    'read:vehicle',
+    'create:ifta_report', 'read:ifta_report', 'update:ifta_report', 'report:ifta_report',
+    'read:billing'
   ],
   
   viewer: [
-    'fleet:view',
-    'drivers:view',
-    'dispatch:view',
-    'compliance:view',
-    'analytics:view',
-    'ifta:view',
-    'settings:view'
+    'read:load',
+    'read:driver', 
+    'read:vehicle',
+    'read:document',
+    'read:ifta_report'
   ]
 } as const
 

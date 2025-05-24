@@ -33,21 +33,44 @@ export default function SignUpPage() {
         lastName: name.split(" ").slice(1).join(" ") || undefined,
       });
       
-      if (res.status !== "complete") {
-        setError(
-          "Sign up incomplete. Please check your email to verify your account and then sign in.",
-        );
-      }
-    } catch (err) {
-      // Clerk error handling
-      if (err === "form_password_pwned") {
-        setError("This password is too common. Please choose a stronger password.");
-      } else if (err === "form_password_length") {
-        setError("Password is too short. Minimum 8 characters required.");
-      } else if (err === "form_identifier_exists") {
-        setError("An account with this email already exists. Please sign in.");
+      if (res.status === "complete") {
+        // Sign up complete - user is now authenticated, redirect to onboarding
+        window.location.href = "/onboarding";
+      } else if (res.status === "missing_requirements") {
+        // Email verification required - attempt to prepare verification
+        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+        setError("Please check your email and click the verification link to complete your account setup.");
       } else {
-        setError("Sign up failed.");
+        // Handle other statuses - account created but needs verification
+        setError("Account created but verification is required. Please check your email and follow the verification link.");
+      }
+    } catch (err: any) {
+      // Clerk error handling
+      console.error("Sign up error:", err);
+      
+      if (err?.errors && Array.isArray(err.errors) && err.errors.length > 0) {
+        const clerkError = err.errors[0];
+        
+        switch(clerkError.code) {
+          case "form_password_pwned":
+            setError("This password is too common. Please choose a stronger password.");
+            break;
+          case "form_password_length":
+            setError("Password is too short. Minimum 8 characters required.");
+            break;
+          case "form_identifier_exists":
+            setError("An account with this email already exists. Please sign in.");
+            break;
+          case "form_password_validation":
+            setError("Password must contain at least 8 characters with letters and numbers.");
+            break;
+          default:
+            setError(clerkError.message || "Sign up failed. Please try again.");
+        }
+      } else if (err?.message) {
+        setError(err.message);
+      } else {
+        setError("Sign up failed. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -60,7 +83,7 @@ export default function SignUpPage() {
         <div className="flex flex-col items-center justify-center text-center">
           <Link href="/" className="flex items-center space-x-2 mb-2">
             <Image
-              src="white_logo.png"
+              src="/white_logo.png"
               alt="FleetFusion Logo"
               width={220}
               height={60}

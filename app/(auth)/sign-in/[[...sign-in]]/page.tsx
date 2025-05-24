@@ -48,13 +48,14 @@ export default function SignInPage() {
           setError("Sign in failed. Please check your credentials.");
         }      } else {
         // Sign in successful - let middleware handle redirects based on user state
-        window.location.href = "/";
-      }    } catch  {
+        window.location.href = "/dashboard";
+      }
+    } catch (err: any) {
       // Properly handle Clerk error objects
-      console.error("Sign in error:", error);
+      console.error("Sign in error:", err);
 
-      if (error && Array.isArray(error) && error.length > 0) {
-        const clerkError = error[0];
+      if (err?.errors && Array.isArray(err.errors) && err.errors.length > 0) {
+        const clerkError = err.errors[0];
 
         switch(clerkError.code) {
           case "form_password_incorrect":
@@ -66,16 +67,17 @@ export default function SignInPage() {
           case "form_identifier_not_verified":
             setError("Please verify your email before signing in.");
             break;
-          case "form_identifier_not_found":
-            setError("Email not found. Please check your email or sign up.");
-            break;
+          case "session_exists":
+            setError("You are already signed in.");
+            window.location.href = "/dashboard";
+            return;
           default:
             setError(clerkError.message || "Sign in failed.");
         }
-      } else if (typeof error === "string") {
-        setError(error);
-      } else if (error) {
-        setError("Unable to sign in. Please try again.");
+      } else if (typeof err === "string") {
+        setError(err);
+      } else if (err?.message) {
+        setError(err.message);
       } else {
         setError("An unexpected error occurred during sign in. Please try again.");
       }
@@ -90,7 +92,7 @@ export default function SignInPage() {
         <div className="flex flex-col items-center justify-center text-center">
           <Link href="/" className="flex items-center space-x-2 mb-2">
             <Image
-              src="white_logo.png"
+              src="/white_logo.png"
               alt="FleetFusion Logo"
               width={220}
               height={60}

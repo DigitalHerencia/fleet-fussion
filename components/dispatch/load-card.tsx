@@ -2,8 +2,15 @@
 
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { MapPin, Calendar, User, Truck } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { MapPin, Calendar, User, Truck, MoreVertical } from "lucide-react"
 import { formatDate } from "@/lib/utils"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface Load {
   id: string
@@ -30,9 +37,11 @@ interface Load {
 interface LoadCardProps {
   load: Load
   onClick: () => void
+  onStatusUpdate?: (loadId: string, status: string) => void
+  isUpdating?: boolean
 }
 
-export function LoadCard({ load, onClick }: LoadCardProps) {
+export function LoadCard({ load, onClick, onStatusUpdate, isUpdating }: LoadCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
@@ -50,12 +59,76 @@ export function LoadCard({ load, onClick }: LoadCardProps) {
     }
   }
 
+  const getNextStatusOptions = (currentStatus: string) => {
+    switch (currentStatus) {
+      case "pending":
+        return [
+          { value: "assigned", label: "Mark Assigned" },
+          { value: "cancelled", label: "Cancel Load" }
+        ]
+      case "assigned":
+        return [
+          { value: "in_transit", label: "Mark In Transit" },
+          { value: "cancelled", label: "Cancel Load" }
+        ]
+      case "in_transit":
+        return [
+          { value: "completed", label: "Mark Completed" }
+        ]
+      default:
+        return []
+    }
+  }
+
+  const nextStatusOptions = getNextStatusOptions(load.status)
+
+  const handleStatusClick = (e: React.MouseEvent, status: string) => {
+    e.stopPropagation()
+    onStatusUpdate?.(load.id, status)
+  }
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Only trigger onClick if not clicking on dropdown or status update buttons
+    const target = e.target as HTMLElement
+    if (!target.closest('[data-status-action]')) {
+      onClick()
+    }
+  }
+
   return (
-    <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={onClick}>
+    <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleCardClick}>
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg">{load.referenceNumber}</CardTitle>
-          <Badge className={`${getStatusColor(load.status)}`}>{load.status.replace("_", " ")}</Badge>
+          <div className="flex items-center gap-2">
+            <Badge className={`${getStatusColor(load.status)}`}>{load.status.replace("_", " ")}</Badge>
+            {onStatusUpdate && nextStatusOptions.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-6 w-6 p-0" 
+                    data-status-action
+                    disabled={isUpdating}
+                  >
+                    <MoreVertical className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" data-status-action>
+                  {nextStatusOptions.map((option) => (
+                    <DropdownMenuItem
+                      key={option.value}
+                      onClick={(e) => handleStatusClick(e, option.value)}
+                      disabled={isUpdating}
+                    >
+                      {option.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
         <p className="text-sm text-muted-foreground">{load.customerName}</p>
       </CardHeader>

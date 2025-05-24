@@ -2,10 +2,26 @@
  * ABAC (Attribute-Based Access Control) Utilities
  * 
  * Provides permission checking and role management utilities
- * for the FleetFusion multi-tenant system
+ * for the FleetFusion multi-tenant system with aligned type structure
  */
 
-import { UserRole, Permission, ROLE_PERMISSIONS, UserContext } from '@/types/auth'
+import { UserRole, Permission, ROLE_PERMISSIONS, UserContext, PermissionAction, ResourceType } from '@/types/auth'
+
+/**
+ * Create a permission string from action and resource
+ */
+export function createPermission(action: PermissionAction, resource: ResourceType): Permission {
+  return `${action}:${resource}`
+}
+
+/**
+ * Parse a permission string into action and resource
+ */
+export function parsePermission(permission: Permission): { action: PermissionAction; resource: ResourceType } | null {
+  const parts = permission.split(':')
+  if (parts.length !== 2) return null
+  return { action: parts[0] as PermissionAction, resource: parts[1] as ResourceType }
+}
 
 /**
  * Check if a user has a specific permission
@@ -13,6 +29,18 @@ import { UserRole, Permission, ROLE_PERMISSIONS, UserContext } from '@/types/aut
 export function hasPermission(user: UserContext | null, permission: Permission): boolean {
   if (!user || !user.isActive) return false
   return user.permissions.includes(permission)
+}
+
+/**
+ * Check if a user has a specific action on a resource
+ */
+export function hasResourcePermission(
+  user: UserContext | null, 
+  action: PermissionAction, 
+  resource: ResourceType
+): boolean {
+  const permission = createPermission(action, resource)
+  return hasPermission(user, permission) || hasPermission(user, createPermission('manage', resource))
 }
 
 /**
@@ -58,21 +86,21 @@ export function isAdmin(user: UserContext | null): boolean {
  * Check if a user can manage other users
  */
 export function canManageUsers(user: UserContext | null): boolean {
-  return hasAnyPermission(user, ['users:invite', 'users:manage', 'users:remove'])
+  return hasResourcePermission(user, 'manage', 'user')
 }
 
 /**
  * Check if a user can view billing information
  */
 export function canViewBilling(user: UserContext | null): boolean {
-  return hasAnyPermission(user, ['billing:view', 'billing:manage'])
+  return hasResourcePermission(user, 'read', 'billing')
 }
 
 /**
  * Check if a user can manage organization settings
  */
 export function canManageSettings(user: UserContext | null): boolean {
-  return hasPermission(user, 'settings:update')
+  return hasResourcePermission(user, 'update', 'organization')
 }
 
 /**
@@ -91,56 +119,53 @@ export function belongsToOrganization(user: UserContext | null, organizationId: 
 }
 
 /**
- * Resource-specific permission checks
+ * Resource-specific permission checks - Updated for new permission structure
  */
 export const PermissionChecks = {
-  // Fleet Management
-  canViewFleet: (user: UserContext | null) => hasPermission(user, 'fleet:view'),
-  canCreateFleet: (user: UserContext | null) => hasPermission(user, 'fleet:create'),
-  canUpdateFleet: (user: UserContext | null) => hasPermission(user, 'fleet:update'),
-  canDeleteFleet: (user: UserContext | null) => hasPermission(user, 'fleet:delete'),
+  // Vehicle Management
+  canViewVehicles: (user: UserContext | null) => hasResourcePermission(user, 'read', 'vehicle'),
+  canCreateVehicles: (user: UserContext | null) => hasResourcePermission(user, 'create', 'vehicle'),
+  canUpdateVehicles: (user: UserContext | null) => hasResourcePermission(user, 'update', 'vehicle'),
+  canDeleteVehicles: (user: UserContext | null) => hasResourcePermission(user, 'delete', 'vehicle'),
   
   // Driver Management
-  canViewDrivers: (user: UserContext | null) => hasPermission(user, 'drivers:view'),
-  canCreateDrivers: (user: UserContext | null) => hasPermission(user, 'drivers:create'),
-  canUpdateDrivers: (user: UserContext | null) => hasPermission(user, 'drivers:update'),
-  canDeleteDrivers: (user: UserContext | null) => hasPermission(user, 'drivers:delete'),
+  canViewDrivers: (user: UserContext | null) => hasResourcePermission(user, 'read', 'driver'),
+  canCreateDrivers: (user: UserContext | null) => hasResourcePermission(user, 'create', 'driver'),
+  canUpdateDrivers: (user: UserContext | null) => hasResourcePermission(user, 'update', 'driver'),
+  canDeleteDrivers: (user: UserContext | null) => hasResourcePermission(user, 'delete', 'driver'),
   
-  // Dispatch Operations
-  canViewDispatch: (user: UserContext | null) => hasPermission(user, 'dispatch:view'),
-  canCreateDispatch: (user: UserContext | null) => hasPermission(user, 'dispatch:create'),
-  canUpdateDispatch: (user: UserContext | null) => hasPermission(user, 'dispatch:update'),
-  canDeleteDispatch: (user: UserContext | null) => hasPermission(user, 'dispatch:delete'),
-  canAssignLoads: (user: UserContext | null) => hasPermission(user, 'dispatch:assign'),
+  // Load Management
+  canViewLoads: (user: UserContext | null) => hasResourcePermission(user, 'read', 'load'),
+  canCreateLoads: (user: UserContext | null) => hasResourcePermission(user, 'create', 'load'),
+  canUpdateLoads: (user: UserContext | null) => hasResourcePermission(user, 'update', 'load'),
+  canDeleteLoads: (user: UserContext | null) => hasResourcePermission(user, 'delete', 'load'),
+  canAssignLoads: (user: UserContext | null) => hasResourcePermission(user, 'assign', 'load'),
   
-  // Compliance Management
-  canViewCompliance: (user: UserContext | null) => hasPermission(user, 'compliance:view'),
-  canCreateCompliance: (user: UserContext | null) => hasPermission(user, 'compliance:create'),
-  canUpdateCompliance: (user: UserContext | null) => hasPermission(user, 'compliance:update'),
-  canDeleteCompliance: (user: UserContext | null) => hasPermission(user, 'compliance:delete'),
-  
-  // Analytics & Reports
-  canViewAnalytics: (user: UserContext | null) => hasPermission(user, 'analytics:view'),
-  canViewReports: (user: UserContext | null) => hasPermission(user, 'reports:view'),
-  canGenerateReports: (user: UserContext | null) => hasPermission(user, 'reports:generate'),
+  // Document Management
+  canViewDocuments: (user: UserContext | null) => hasResourcePermission(user, 'read', 'document'),
+  canCreateDocuments: (user: UserContext | null) => hasResourcePermission(user, 'create', 'document'),
+  canUpdateDocuments: (user: UserContext | null) => hasResourcePermission(user, 'update', 'document'),
+  canDeleteDocuments: (user: UserContext | null) => hasResourcePermission(user, 'delete', 'document'),
+  canApproveDocuments: (user: UserContext | null) => hasResourcePermission(user, 'approve', 'document'),
   
   // IFTA Management
-  canViewIFTA: (user: UserContext | null) => hasPermission(user, 'ifta:view'),
-  canCreateIFTA: (user: UserContext | null) => hasPermission(user, 'ifta:create'),
-  canUpdateIFTA: (user: UserContext | null) => hasPermission(user, 'ifta:update'),
-  canSubmitIFTA: (user: UserContext | null) => hasPermission(user, 'ifta:submit'),
+  canViewIFTA: (user: UserContext | null) => hasResourcePermission(user, 'read', 'ifta_report'),
+  canCreateIFTA: (user: UserContext | null) => hasResourcePermission(user, 'create', 'ifta_report'),
+  canUpdateIFTA: (user: UserContext | null) => hasResourcePermission(user, 'update', 'ifta_report'),
+  canReportIFTA: (user: UserContext | null) => hasResourcePermission(user, 'report', 'ifta_report'),
   
-  // Settings & Administration
-  canViewSettings: (user: UserContext | null) => hasPermission(user, 'settings:view'),
-  canUpdateSettings: (user: UserContext | null) => hasPermission(user, 'settings:update'),
-  canViewBilling: (user: UserContext | null) => hasPermission(user, 'billing:view'),
-  canManageBilling: (user: UserContext | null) => hasPermission(user, 'billing:manage'),
+  // Organization & Administration
+  canViewOrganization: (user: UserContext | null) => hasResourcePermission(user, 'read', 'organization'),
+  canUpdateOrganization: (user: UserContext | null) => hasResourcePermission(user, 'update', 'organization'),
+  canViewBilling: (user: UserContext | null) => hasResourcePermission(user, 'read', 'billing'),
+  canManageBilling: (user: UserContext | null) => hasResourcePermission(user, 'manage', 'billing'),
   
   // User Management
-  canViewUsers: (user: UserContext | null) => hasPermission(user, 'users:view'),
-  canInviteUsers: (user: UserContext | null) => hasPermission(user, 'users:invite'),
-  canManageUsers: (user: UserContext | null) => hasPermission(user, 'users:manage'),
-  canRemoveUsers: (user: UserContext | null) => hasPermission(user, 'users:remove'),
+  canViewUsers: (user: UserContext | null) => hasResourcePermission(user, 'read', 'user'),
+  canCreateUsers: (user: UserContext | null) => hasResourcePermission(user, 'create', 'user'),
+  canUpdateUsers: (user: UserContext | null) => hasResourcePermission(user, 'update', 'user'),
+  canDeleteUsers: (user: UserContext | null) => hasResourcePermission(user, 'delete', 'user'),
+  canManageUsers: (user: UserContext | null) => hasResourcePermission(user, 'manage', 'user'),
 } as const
 
 /**

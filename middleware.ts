@@ -43,6 +43,14 @@ const isDriverRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req: NextRequest) => {
+  // Check if user is authenticated for public routes
+  const authResult = await auth();
+  
+  // Redirect authenticated users away from auth pages
+  if (authResult.userId && (req.nextUrl.pathname.startsWith('/sign-in') || req.nextUrl.pathname.startsWith('/sign-up'))) {
+    return NextResponse.redirect(new URL('/dashboard', req.url));
+  }
+
   // Allow public routes without authentication
   if (isPublicRoute(req)) {
     return NextResponse.next();

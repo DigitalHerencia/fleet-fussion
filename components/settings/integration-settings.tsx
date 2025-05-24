@@ -31,7 +31,7 @@ const realIntegrations = [
     lastSync: "2023-06-28 10:15 AM",
     icon: "🔄",
     available: true,
-    logo: "/abstract-motive.png",
+    logo: "/black_logo.png",
     comingSoon: false,
   },
   {
@@ -42,7 +42,7 @@ const realIntegrations = [
     lastSync: "2023-06-28 09:30 AM",
     icon: "💰",
     available: true,
-    logo: "/abstract-geometric-shapes.png",
+    logo: "/black_logo.png",
     comingSoon: false,
   },
   {
@@ -53,7 +53,7 @@ const realIntegrations = [
     lastSync: "Never",
     icon: "⛽",
     available: true,
-    logo: "/abstract-financial-network.png",
+    logo: "/black_logo.png",
     comingSoon: false,
   },
   {
@@ -64,7 +64,7 @@ const realIntegrations = [
     lastSync: "2023-06-27 03:45 PM",
     icon: "🔧",
     available: true,
-    logo: "/fleetio-logo-representation.png",
+    logo: "/black_logo.png",
     comingSoon: true,
   },
 ]

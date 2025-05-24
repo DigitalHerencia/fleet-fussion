@@ -29,6 +29,7 @@ interface Vehicle {
 interface LoadFormProps {
   drivers: Driver[]
   vehicles: Vehicle[]
+  onClose?: () => void
   load?: {
     id: string
     referenceNumber: string
@@ -58,7 +59,7 @@ interface LoadFormProps {
   }
 }
 
-export function LoadForm({ drivers, vehicles, load }: LoadFormProps) {
+export function LoadForm({ drivers, vehicles, load, onClose }: LoadFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -80,7 +81,7 @@ export function LoadForm({ drivers, vehicles, load }: LoadFormProps) {
             title: "Load updated",
             description: "The load has been updated successfully.",
           })
-          router.push("/dispatch")
+          onClose?.()
         } else {
           toast({
             title: "Error",
@@ -96,7 +97,7 @@ export function LoadForm({ drivers, vehicles, load }: LoadFormProps) {
             title: "Load created",
             description: "The load has been created successfully.",
           })
-          router.push("/dispatch")
+          onClose?.()
         } else {
           toast({
             title: "Error",

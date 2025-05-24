@@ -14,7 +14,6 @@ const nextConfig: import( 'next' ).NextConfig = {
         hostname: 'localhost',
       },
     ],
-    dangerouslyAllowSVG: true,
   },
   experimental: {
     serverActions: {

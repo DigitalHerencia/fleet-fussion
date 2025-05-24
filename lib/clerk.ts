@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import type { Webhook } from 'svix';
 import { Webhook as SvixWebhook } from 'svix';
+import { createClerkClient } from '@clerk/nextjs/server'
 import { DatabaseQueries } from '@/lib/database'
 import { 
   UserWebhookPayload, 
@@ -20,9 +21,47 @@ import {
 
 // Webhook secret from environment
 const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET as string
+const CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY as string
 
 if (!WEBHOOK_SECRET) {
   throw new Error('CLERK_WEBHOOK_SECRET environment variable is required')
+}
+
+if (!CLERK_SECRET_KEY) {
+  throw new Error('CLERK_SECRET_KEY environment variable is required')
+}
+
+// Initialize Clerk backend client for API operations
+const clerkClient = createClerkClient({ secretKey: CLERK_SECRET_KEY })
+
+/**
+ * Update user's Clerk metadata to keep session claims in sync
+ */
+async function updateClerkUserMetadata(clerkUserId: string, metadata: Partial<ClerkUserMetadata>) {
+  try {
+    await clerkClient.users.updateUserMetadata(clerkUserId, {
+      publicMetadata: metadata
+    })
+    console.log(`Updated Clerk metadata for user ${clerkUserId}`)
+  } catch (error) {
+    console.error(`Failed to update Clerk metadata for user ${clerkUserId}:`, error)
+    throw error
+  }
+}
+
+/**
+ * Update organization's Clerk metadata
+ */
+async function updateClerkOrganizationMetadata(clerkOrgId: string, metadata: Partial<ClerkOrganizationMetadata>) {
+  try {
+    await clerkClient.organizations.updateOrganization(clerkOrgId, {
+      publicMetadata: metadata
+    })
+    console.log(`Updated Clerk metadata for organization ${clerkOrgId}`)
+  } catch (error) {
+    console.error(`Failed to update Clerk metadata for organization ${clerkOrgId}:`, error)
+    throw error
+  }
 }
 
 /**
@@ -61,8 +100,7 @@ export async function verifyWebhook(request: NextRequest) {
 /**
  * Handle user webhook events
  */
-export class UserWebhookHandler {
-  /**
+export class UserWebhookHandler {  /**
    * Handle user.created event
    */
   static async handleUserCreated(payload: UserWebhookPayload) {
@@ -120,7 +158,18 @@ export class UserWebhookHandler {
         onboardingCompleted: userMetadata?.onboardingCompleted ?? false
       })
       
-      console.log('Successfully created user in database:', userData.id)
+      // Update Clerk user metadata to ensure session claims are synchronized
+      const updatedMetadata: ClerkUserMetadata = {
+        organizationId: dbOrg.id,
+        role,
+        permissions,
+        isActive: userMetadata?.isActive ?? true,
+        onboardingCompleted: userMetadata?.onboardingCompleted ?? false
+      }
+      
+      await updateClerkUserMetadata(userData.id, updatedMetadata)
+      
+      console.log('Successfully created user in database and updated session claims:', userData.id)
     } catch (error) {
       console.error('Error handling user.created webhook:', error)
       throw error
@@ -172,8 +221,21 @@ export class UserWebhookHandler {
         isActive: userMetadata?.isActive ?? true,
         onboardingCompleted: userMetadata?.onboardingCompleted ?? false
       })
+        // CRITICAL: Update Clerk user metadata to ensure session claims reflect changes
+      // This is essential for ABAC system - when roles/permissions change via webhook,
+      // the user's JWT token must be updated with new claims
+      const updatedMetadata: ClerkUserMetadata = {
+        organizationId: dbOrg.id,
+        role,
+        permissions,
+        isActive: userMetadata?.isActive ?? true,
+        onboardingCompleted: userMetadata?.onboardingCompleted ?? false,
+        lastLogin: userMetadata?.lastLogin
+      }
       
-      console.log('Successfully updated user in database:', userData.id)
+      await updateClerkUserMetadata(userData.id, updatedMetadata)
+      
+      console.log('Successfully updated user in database and session claims:', userData.id)
     } catch (error) {
       console.error('Error handling user.updated webhook:', error)
       throw error
@@ -224,8 +286,7 @@ export class OrganizationWebhookHandler {
       throw error
     }
   }
-  
-  /**
+    /**
    * Handle organization.updated event
    */
   static async handleOrganizationUpdated(payload: OrganizationWebhookPayload) {
@@ -242,7 +303,10 @@ export class OrganizationWebhookHandler {
         metadata
       })
       
-      console.log('Successfully updated organization in database:', orgData.id)
+      // Update Clerk organization metadata to ensure session claims are synchronized
+      await updateClerkOrganizationMetadata(orgData.id, metadata)
+      
+      console.log('Successfully updated organization in database and session claims:', orgData.id)
     } catch (error) {
       console.error('Error handling organization.updated webhook:', error)
       throw error
@@ -261,6 +325,154 @@ export class OrganizationWebhookHandler {
       console.log('Successfully deleted organization from database:', payload.data.id)
     } catch (error) {
       console.error('Error handling organization.deleted webhook:', error)
+      throw error
+    }
+  }
+    /**
+   * Handle organizationMembership.created event
+   */
+  static async handleOrganizationMembershipCreated(payload: any) {
+    try {
+      console.log('Processing organizationMembership.created webhook:', payload.data.id)
+      
+      const membershipData = payload.data
+      const userId = membershipData.user_id || membershipData.public_user_data?.user_id
+      const orgId = membershipData.organization.id
+      const role = membershipData.role || 'viewer'
+      
+      if (!userId || !orgId) {
+        console.log('Missing user ID or organization ID in membership webhook')
+        return
+      }
+      
+      // Get organization from database
+      const dbOrg = await DatabaseQueries.getOrganizationByClerkId(orgId)
+      if (!dbOrg) {
+        console.log('Organization not found for membership creation:', orgId)
+        return
+      }
+      
+      // Get or create user in database
+      const existingUser = await DatabaseQueries.getUserByClerkId(userId)
+      if (existingUser) {
+        // Update existing user with new organization
+        await DatabaseQueries.upsertUser({
+          clerkId: userId,
+          organizationId: dbOrg.id,
+          email: existingUser.email,
+          firstName: existingUser.firstName || undefined,
+          lastName: existingUser.lastName || undefined,
+          profileImage: existingUser.profileImage || undefined,
+          role,
+          permissions: ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS] || [],
+          isActive: true,
+          onboardingCompleted: existingUser.onboardingCompleted
+        })
+        
+        // Update Clerk metadata for proper session claims
+        const updatedMetadata: ClerkUserMetadata = {
+          organizationId: dbOrg.id,
+          role: role as any,
+          permissions: ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS] || [],
+          isActive: true,
+          onboardingCompleted: existingUser.onboardingCompleted
+        }
+        
+        await updateClerkUserMetadata(userId, updatedMetadata)
+      }
+      
+      console.log('Successfully processed organization membership creation:', userId, orgId)
+    } catch (error) {
+      console.error('Error handling organizationMembership.created webhook:', error)
+      throw error
+    }
+  }
+  
+  /**
+   * Handle organizationMembership.updated event
+   */
+  static async handleOrganizationMembershipUpdated(payload: any) {
+    try {
+      console.log('Processing organizationMembership.updated webhook:', payload.data.id)
+      
+      const membershipData = payload.data
+      const userId = membershipData.user_id || membershipData.public_user_data?.user_id
+      const orgId = membershipData.organization.id
+      const role = membershipData.role || 'viewer'
+      
+      if (!userId || !orgId) {
+        console.log('Missing user ID or organization ID in membership webhook')
+        return
+      }
+      
+      // Get organization from database
+      const dbOrg = await DatabaseQueries.getOrganizationByClerkId(orgId)
+      if (!dbOrg) {
+        console.log('Organization not found for membership update:', orgId)
+        return
+      }
+      
+      // Get user from database
+      const existingUser = await DatabaseQueries.getUserByClerkId(userId)
+      if (!existingUser) {
+        console.log('User not found for membership update:', userId)
+        return
+      }
+      
+      // Update user role and permissions
+      await DatabaseQueries.upsertUser({
+        clerkId: userId,
+        organizationId: dbOrg.id,
+        email: existingUser.email,
+        firstName: existingUser.firstName || undefined,
+        lastName: existingUser.lastName || undefined,
+        profileImage: existingUser.profileImage || undefined,
+        role,
+        permissions: ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS] || [],
+        isActive: existingUser.isActive,
+        onboardingCompleted: existingUser.onboardingCompleted
+      })
+      
+      // CRITICAL: Update Clerk metadata for immediate session claims update
+      // This ensures role/permission changes are reflected in JWT tokens immediately
+      const updatedMetadata: ClerkUserMetadata = {
+        organizationId: dbOrg.id,
+        role: role as any,
+        permissions: ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS] || [],
+        isActive: existingUser.isActive,
+        onboardingCompleted: existingUser.onboardingCompleted
+      }
+      
+      await updateClerkUserMetadata(userId, updatedMetadata)
+      
+      console.log('Successfully processed organization membership update with session sync:', userId, orgId)
+    } catch (error) {
+      console.error('Error handling organizationMembership.updated webhook:', error)
+      throw error
+    }
+  }
+  
+  /**
+   * Handle organizationMembership.deleted event
+   */
+  static async handleOrganizationMembershipDeleted(payload: any) {
+    try {
+      console.log('Processing organizationMembership.deleted webhook:', payload.data.id)
+      
+      const membershipData = payload.data
+      const userId = membershipData.user_id || membershipData.public_user_data?.user_id
+      
+      if (!userId) {
+        console.log('Missing user ID in membership deletion webhook')
+        return
+      }
+      
+      // Remove user from database (cascade will handle related records)
+      await DatabaseQueries.deleteUser(userId)
+      
+      console.log('Successfully processed organization membership deletion:', userId)
+    } catch (error) {
+      console.error('Error handling organizationMembership.deleted webhook:', error)
       throw error
     }
   }
