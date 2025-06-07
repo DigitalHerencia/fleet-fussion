@@ -23,8 +23,9 @@ export async function DriverComplianceTable({ orgId }: DriverComplianceTableProp
             <TableHead>Driver Name</TableHead>
             <TableHead>CDL Status</TableHead>
             <TableHead>Medical Status</TableHead>
-            <TableHead>HOS Status</TableHead>
+            <TableHead>Violation Status</TableHead>
             <TableHead>Last Violation</TableHead>
+            <TableHead>Last Inspection</TableHead>
             <TableHead className="w-[80px]"></TableHead>
           </TableRow>
         </TableHeader>
@@ -45,8 +46,9 @@ export async function DriverComplianceTable({ orgId }: DriverComplianceTableProp
                 <TableCell>
                   <Badge variant="outline">{d.medicalStatus}</Badge>
                 </TableCell>
-                <TableCell>{d.hosStatus}</TableCell>
+                <TableCell>{d.violationStatus}</TableCell>
                 <TableCell>{d.lastViolation ? new Date(d.lastViolation).toLocaleDateString() : 'None'}</TableCell>
+                <TableCell>{d.lastInspection ? new Date(d.lastInspection).toLocaleDateString() : 'N/A'}</TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

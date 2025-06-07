@@ -193,18 +193,35 @@ export interface DriverComplianceRow {
   medicalStatus: string;
   medicalExpiration: Date | null;
   hosStatus: string;
+  violationStatus: string;
   lastViolation: Date | null;
+  lastInspection: Date | null;
 }
 
 export async function getDriverComplianceStatuses(organizationId: string): Promise<DriverComplianceRow[]> {
   try {
     const drivers = await prisma.driver.findMany({
       where: { organizationId, status: 'active' },
-      include: { complianceDocuments: true },
+      include: {
+        complianceDocuments: true,
+        loads: {
+          where: {
+            status: {
+              in: ['assigned', 'dispatched', 'in_transit', 'at_pickup', 'picked_up', 'en_route']
+            }
+          },
+          select: {
+            vehicle: { select: { lastInspectionDate: true } },
+            createdAt: true
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      },
     });
     const today = new Date();
     const soon = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
-    return drivers.map(d => {
+    return Promise.all(drivers.map(async d => {
       const cdlExp = d.licenseExpiration;
       const medExp = d.medicalCardExpiration;
       const cdlStatus = !cdlExp
@@ -221,6 +238,10 @@ export async function getDriverComplianceStatuses(organizationId: string): Promi
         : medExp < soon
         ? 'Expiring Soon'
         : 'Valid';
+      const hos = await getDriverHOSStatus(d.id).catch(() => null) as any;
+      const violationStatus = hos?.data?.complianceStatus ?? 'unknown';
+      const lastViolation = hos?.data?.lastLoggedAt ?? null;
+      const lastInspection = d.loads?.[0]?.vehicle?.lastInspectionDate ?? null;
 
       return {
         id: d.id,
@@ -229,10 +250,12 @@ export async function getDriverComplianceStatuses(organizationId: string): Promi
         cdlExpiration: cdlExp,
         medicalStatus,
         medicalExpiration: medExp,
-        hosStatus: 'Unknown',
-        lastViolation: null,
+        hosStatus: hos?.data?.currentStatus ?? 'Unknown',
+        violationStatus,
+        lastViolation,
+        lastInspection,
       } as DriverComplianceRow;
-    });
+    }));
   } catch (error) {
     console.error('Error fetching driver compliance status:', error);
     throw new Error('Failed to fetch driver compliance status');
