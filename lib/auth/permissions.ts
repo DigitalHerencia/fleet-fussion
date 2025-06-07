@@ -20,6 +20,7 @@ import {
   getPermissionsForRole as abacGetPermissionsForRole
 } from '@/types/abac';
 import type { UserContext } from '@/types/auth';
+import React from 'react';
 
 
 
@@ -243,9 +244,8 @@ export class ResourcePermissions {
 export function requirePermission(permission: Permission) {
   return function<T extends object>(Component: React.ComponentType<T>) {
     return function PermissionWrapper(props: T) {
-      // This would be used with the auth context
       // Implementation would check permissions and render component or fallback
-      return Component as any // Placeholder for type checking
+      return <Component {...props} />
     }
   }
 }

@@ -116,3 +116,29 @@ export interface ProfitabilityMetrics {
     margin: number
   }[]
 }
+
+export interface RevenueEntry {
+  date: string
+  revenue: number
+  loads: number
+}
+
+export interface ExpenseEntry {
+  date: string
+  amount: number
+  gallons: number
+}
+
+export interface ProfitMarginEntry {
+  date: string
+  revenue: number
+  expenses: number
+  profit: number
+  margin: number
+}
+
+export interface FinancialAnalytics {
+  revenue: RevenueEntry[]
+  expenses: ExpenseEntry[]
+  profitMargin: ProfitMarginEntry[]
+}

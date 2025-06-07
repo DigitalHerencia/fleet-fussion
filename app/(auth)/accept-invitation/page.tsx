@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSignUp, useUser } from '@clerk/nextjs';
+import type { SignUpResource } from '@clerk/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -113,7 +114,7 @@ export default function AcceptInvitationPage() {
 
     try {
       // Create the sign-up with invitation token
-      const result = await signUp.create({
+      const result: SignUpResource = await signUp.create({
         strategy: 'ticket',
         ticket: invitationToken,
         firstName: userInfo.firstName,
@@ -124,8 +125,8 @@ export default function AcceptInvitationPage() {
       // Clerk automatically verifies email for invited users
       if (result.status === 'complete') {
         // Get invitation metadata from the result
-        const invitationMetadata = result.createdSessionId 
-          ? (result as any).publicMetadata as InvitationMetadata
+        const invitationMetadata = result.createdSessionId
+          ? (result.publicMetadata as unknown as InvitationMetadata)
           : null;
 
         // Set the session as active

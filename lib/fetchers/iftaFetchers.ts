@@ -28,7 +28,9 @@ async function checkUserAccess(organizationId: string) {
 /**
  * Get IFTA data for a specific period
  */
-export async function getIftaDataForPeriod(orgId: string, quarter: string, year: string) {
+import type { IftaData, IftaJurisdictionSummary } from "@/types/ifta"
+
+export async function getIftaDataForPeriod(orgId: string, quarter: string, year: string): Promise<IftaData> {
   try {
     await checkUserAccess(orgId);
 
@@ -119,7 +121,7 @@ export async function getIftaDataForPeriod(orgId: string, quarter: string, year:
       }
       acc[jurisdiction].miles += trip.distance;
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, IftaJurisdictionSummary>);
 
     // Add fuel data to jurisdiction summary
     fuelPurchases.forEach(purchase => {

@@ -92,3 +92,26 @@ export interface TripReport {
   createdAt: Date
   updatedAt: Date
 }
+
+export interface IftaSummary {
+  totalMiles: number
+  totalGallons: number
+  averageMpg: number
+  totalFuelCost: number
+}
+
+export interface IftaReportSummary {
+  id: string
+  status: string
+  submittedAt: Date | null
+  dueDate: Date
+}
+
+export interface IftaData {
+  period: { quarter: number; year: number }
+  summary: IftaSummary
+  trips: TripReport[]
+  fuelPurchases: FuelPurchase[]
+  jurisdictionSummary: IftaJurisdictionSummary[]
+  report: IftaReportSummary | null
+}

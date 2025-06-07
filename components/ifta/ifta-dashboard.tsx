@@ -11,19 +11,7 @@ import { IftaTripTable } from "./ifta-trip-table"
 import { BarChart, Calendar, Download, FileText, TrendingUp } from "lucide-react"
 import { getIftaDataForPeriod, getIftaTripData, getIftaFuelPurchases } from "@/lib/fetchers/iftaFetchers"
 import { useParams } from "next/navigation"
-
-interface IftaData {
-  summary: {
-    totalMiles: number;
-    totalGallons: number;
-    averageMpg: number;
-    totalFuelCost: number;
-  };
-  trips: any[];
-  fuelPurchases: any[];
-  jurisdictionSummary: any[];
-  report: any;
-}
+import type { IftaData } from "@/types/ifta"
 
 export function IftaDashboard() {
   const params = useParams()
@@ -41,43 +29,7 @@ export function IftaDashboard() {
         setLoading(true)
         const [quarterPart, yearPart] = quarter.split('-')
         const data = await getIftaDataForPeriod(orgId, quarterPart, yearPart)
-        // Ensure data matches IftaData shape
-        if (
-          data &&
-          typeof data === "object" &&
-          "summary" in data &&
-          "trips" in data &&
-          "fuelPurchases" in data &&
-          "jurisdictionSummary" in data &&
-          "report" in data
-        ) {
-          // Transform data to match IftaData type
-          setIftaData({
-            summary: {
-              totalMiles: Number((data as any).summary?.totalMiles) || 0,
-              totalGallons: Number((data as any).summary?.totalGallons) || 0,
-              averageMpg: Number((data as any).summary?.averageMpg) || 0,
-              totalFuelCost: Number((data as any).summary?.totalFuelCost) || 0,
-            },
-            trips: Array.isArray((data as any).trips) ? (data as any).trips : [],
-            fuelPurchases: Array.isArray((data as any).fuelPurchases) ? (data as any).fuelPurchases : [],
-            jurisdictionSummary: Array.isArray((data as any).jurisdictionSummary) ? (data as any).jurisdictionSummary : [],
-            report: (data as any).report ?? null,
-          })
-        } else {
-          setIftaData({
-            summary: {
-              totalMiles: 0,
-              totalGallons: 0,
-              averageMpg: 0,
-              totalFuelCost: 0,
-            },
-            trips: [],
-            fuelPurchases: [],
-            jurisdictionSummary: [],
-            report: null,
-          })
-        }
+        setIftaData(data)
         setError(null)
       } catch (err) {
         console.error('Error fetching IFTA data:', err)

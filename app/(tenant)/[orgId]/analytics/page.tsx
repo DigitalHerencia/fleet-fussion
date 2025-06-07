@@ -8,6 +8,7 @@ import { FinancialMetrics } from "@/components/analytics/financial-metrics"
 import { DriverPerformance } from "@/components/analytics/driver-performance"
 import { VehicleUtilization } from "@/components/analytics/vehicle-utilization"
 import { getDashboardSummary, getPerformanceAnalytics, getFinancialAnalytics, getDriverAnalytics, getVehicleAnalytics } from "@/lib/fetchers/analyticsFetchers"
+import type { FinancialAnalytics } from "@/types/analytics"
 
 export default async function AnalyticsPage({ params }: { params: Promise<{ orgId: string }> }) {
   const { orgId } = await params
@@ -26,13 +27,10 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ orgI
   const performanceData = Array.isArray(performanceDataRaw) ? performanceDataRaw : [];
   const driverPerformanceMetrics = Array.isArray(driverPerformanceMetricsRaw) ? driverPerformanceMetricsRaw : [];
   const vehicleData = Array.isArray(vehicleDataRaw) ? vehicleDataRaw : [];
-  const financialData = (financialDataRaw && typeof financialDataRaw === 'object' && financialDataRaw !== null)
-    ? {
-        revenue: Array.isArray((financialDataRaw as any).revenue) ? (financialDataRaw as any).revenue : [],
-        expenses: Array.isArray((financialDataRaw as any).expenses) ? (financialDataRaw as any).expenses : [],
-        profitMargin: Array.isArray((financialDataRaw as any).profitMargin) ? (financialDataRaw as any).profitMargin : [],
-      }
-    : { revenue: [], expenses: [], profitMargin: [] };
+  const financialData: FinancialAnalytics =
+    financialDataRaw && typeof financialDataRaw === 'object'
+      ? (financialDataRaw as FinancialAnalytics)
+      : { revenue: [], expenses: [], profitMargin: [] };
 
   // Metrics for cards
   const metrics = [

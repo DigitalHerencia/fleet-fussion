@@ -1,4 +1,4 @@
-import { HosLog } from "./../../types/compliance";
+import { HosLog, HosViolation, HosLogMetadata } from "@/types/compliance";
 'use server';
 
 import prisma from '@/lib/database/db';
@@ -566,13 +566,14 @@ export async function getHOSLogs(
     const logs = hosDocs.map(doc => {
       let totalDriveTime = 0;
       let totalOnDutyTime = 0;
-      let violations: any[] = [];
-      let meta = doc.metadata;
+      let violations: HosViolation[] = [];
+      let meta: unknown = doc.metadata;
       if (typeof meta === 'string') {
         try { meta = JSON.parse(meta); } catch { meta = {}; }
       }
-      if (meta && typeof meta === 'object' && !Array.isArray(meta) && Array.isArray((meta as any).logs)) {
-        for (const entry of (meta as any).logs) {
+      const metaObj = meta as HosLogMetadata;
+      if (metaObj && typeof metaObj === 'object' && Array.isArray(metaObj.logs)) {
+        for (const entry of metaObj.logs) {
           if (entry.status === 'driving') totalDriveTime += entry.endTime - entry.startTime;
           if (['driving', 'on_duty'].includes(entry.status)) totalOnDutyTime += entry.endTime - entry.startTime;
         }
@@ -622,7 +623,7 @@ export async function getHOSLogs(
 /**
  * Get HOS status for a specific driver
  */
-export async function getDriverHOSStatus(driverId: string) {
+export async function getDriverHOSStatus(driverId: string): Promise<DriverHOSStatusResponse> {
   try {
     const { userId, orgId } = await auth();
     if (!userId || !orgId) {

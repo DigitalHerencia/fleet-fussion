@@ -6,6 +6,12 @@ import { useSignUp, useUser, useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { MapPinned } from "lucide-react";
 
+interface WindowWithClerk {
+  Clerk?: {
+    captcha?: { isSolved: () => boolean }
+  }
+}
+
 export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -49,7 +55,7 @@ export default function SignUpPage() {
     if (!isLoaded) return;
     
     // Enforce Clerk CAPTCHA if present
-    const captcha = (window as any).Clerk?.captcha;
+    const captcha = (window as WindowWithClerk).Clerk?.captcha;
     if (captcha && !captcha.isSolved()) {
       setError("Please complete the CAPTCHA challenge.");
       setLoading(false);

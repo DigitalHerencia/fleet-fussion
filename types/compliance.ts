@@ -1,6 +1,7 @@
 /**
  * Type definitions for the compliance module
  */
+import type { ApiResponse } from './index'
 
 export interface ComplianceDocument {
   id: string
@@ -416,3 +417,30 @@ export const DOCUMENT_STATUS_LABELS = {
   expiring: "Expiring Soon",
   expired: "Expired",
 }
+
+export interface HosLogMetaEntry {
+  status: string
+  startTime: number
+  endTime: number
+}
+
+export interface HosLogMetadata {
+  logs: HosLogMetaEntry[]
+}
+
+export interface DriverHOSStatus {
+  driverId: string
+  currentStatus: string
+  availableDriveTime: number
+  availableOnDutyTime: number
+  usedDriveTime: number
+  usedOnDutyTime: number
+  cycleHours: number
+  usedCycleHours: number
+  restartAvailable: boolean
+  violations: HosViolation[]
+  lastLoggedAt: Date | null
+  complianceStatus: string
+}
+
+export type DriverHOSStatusResponse = ApiResponse<DriverHOSStatus>
