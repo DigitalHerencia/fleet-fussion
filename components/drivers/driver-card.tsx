@@ -21,7 +21,7 @@ interface Driver {
 
 interface DriverCardProps {
   driver: Driver
-  onClick: () => void
+  onClick?: () => void
 }
 
 export function DriverCard({ driver, onClick }: DriverCardProps) {

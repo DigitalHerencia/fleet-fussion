@@ -1,6 +1,7 @@
 import { listDriversByOrg } from "@/lib/fetchers/driverFetchers";
 import { DriverCard } from "@/components/drivers/driver-card";
-import { DriverForm } from "@/components/drivers/DriverForm";
+import { DriverFormFeature } from "@/features/drivers/DriverFormFeature";
+import Link from "next/link";
 import type { DriverFilters } from "@/types/drivers";
 
 interface DriverListPageProps {
@@ -26,9 +27,9 @@ export default async function DriverListPage({
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {drivers.map((driver) => (
-          <DriverCard
-            key={driver.id}
-            driver={{
+          <Link key={driver.id} href={`/${orgId}/drivers/${driver.id}`}>
+            <DriverCard
+              driver={{
               id: driver.id ?? "",
               firstName: driver.firstName ?? "",
               lastName: driver.lastName ?? "",
@@ -48,35 +49,12 @@ export default async function DriverListPage({
                 driver.hireDate !== null && driver.hireDate !== undefined
                   ? new Date(driver.hireDate)
                   : new Date(0),
-            }}
-            onClick={() => {}}
-          />
+              }}
+            />
+          </Link>
         ))}
       </div>
-      {/* Pass a form prop as required by DriverFormProps */}
-      <DriverForm
-        form={{
-          values: {
-            firstName: "",
-            lastName: "",
-            email: "",
-            phone: "",
-            hireDate: "",
-            homeTerminal: "",
-            cdlNumber: "",
-            cdlState: "",
-            cdlClass: "A",
-            cdlExpiration: "",
-            medicalCardExpiration: "",
-            tags: [],
-          },
-          errors: {},
-          onChange: () => {},
-          onSubmit: async () => {},
-          submitting: false,
-          mode: "create",
-        }}
-      />
+      <DriverFormFeature orgId={orgId} mode="create" />
     </div>
   );
 }

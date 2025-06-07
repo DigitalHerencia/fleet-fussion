@@ -101,6 +101,7 @@ export default async function DriverDashboardPage({ params }: { params: Promise<
           <CardContent>
             <Suspense fallback={<LoadingSpinner />}>
               <DriverFormFeature
+                orgId={orgId}
                 initialValues={driverData}
                 mode="edit"
                 driverId={driverData.id}
