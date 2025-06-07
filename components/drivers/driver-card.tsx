@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Phone, Mail, Calendar, FileText } from "lucide-react"
 import { formatDate } from "@/lib/utils"
+import Link from "next/link"
 
 interface Driver {
   id: string
@@ -21,10 +22,11 @@ interface Driver {
 
 interface DriverCardProps {
   driver: Driver
-  onClick: () => void
+  href?: string
+  onClick?: () => void
 }
 
-export function DriverCard({ driver, onClick }: DriverCardProps) {
+export function DriverCard({ driver, href, onClick }: DriverCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "active":
@@ -42,7 +44,7 @@ export function DriverCard({ driver, onClick }: DriverCardProps) {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`
   }
 
-  return (
+  const card = (
     <Card className="cursor-pointer bg-black hover:shadow-md transition-shadow" onClick={onClick}>
       <CardHeader className="pb-2 flex flex-row items-center space-y-0 gap-4">
         <Avatar className="h-12 w-12">
@@ -110,4 +112,6 @@ export function DriverCard({ driver, onClick }: DriverCardProps) {
       </CardFooter>
     </Card>
   )
+
+  return href ? <Link href={href}>{card}</Link> : card
 }

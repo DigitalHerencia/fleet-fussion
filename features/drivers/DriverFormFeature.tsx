@@ -11,9 +11,10 @@ export interface DriverFormFeatureProps {
   mode: "create" | "edit";
   driverId?: string;
   onSuccess?: () => void;
+  orgId?: string;
 }
 
-export function DriverFormFeature({ initialValues, mode, driverId, onSuccess }: DriverFormFeatureProps) {
+export function DriverFormFeature({ initialValues, mode, driverId, orgId, onSuccess }: DriverFormFeatureProps) {
   const [form, setForm] = useState<{
     values: z.infer<typeof driverFormSchema>;
     errors: Record<string, string>;
@@ -75,8 +76,10 @@ export function DriverFormFeature({ initialValues, mode, driverId, onSuccess }: 
       let result;
       if (mode === "edit" && driverId) {
         result = await updateDriverAction(driverId, parsed);
+      } else if (orgId) {
+        result = await createDriverAction(orgId, parsed);
       } else {
-        result = await createDriverAction("", parsed); // TODO: pass tenant/org id
+        throw new Error("Organization ID required to create driver");
       }
       if (result.success) {
         toast({ title: "Driver saved", description: "Driver profile has been updated." });
@@ -91,7 +94,6 @@ export function DriverFormFeature({ initialValues, mode, driverId, onSuccess }: 
   }
 
   function handleUploadDocument() {
-    // TODO: Open document upload dialog/modal for driver
     toast({ title: "Document upload", description: "Document upload not yet implemented." });
   }
 

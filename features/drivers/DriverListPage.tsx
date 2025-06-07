@@ -1,6 +1,6 @@
 import { listDriversByOrg } from "@/lib/fetchers/driverFetchers";
 import { DriverCard } from "@/components/drivers/driver-card";
-import { DriverForm } from "@/components/drivers/DriverForm";
+import { DriverFormFeature } from "@/features/drivers/DriverFormFeature";
 import type { DriverFilters } from "@/types/drivers";
 
 interface DriverListPageProps {
@@ -28,6 +28,7 @@ export default async function DriverListPage({
         {drivers.map((driver) => (
           <DriverCard
             key={driver.id}
+            href={`/${orgId}/drivers/${driver.id}`}
             driver={{
               id: driver.id ?? "",
               firstName: driver.firstName ?? "",
@@ -49,34 +50,10 @@ export default async function DriverListPage({
                   ? new Date(driver.hireDate)
                   : new Date(0),
             }}
-            onClick={() => {}}
           />
         ))}
       </div>
-      {/* Pass a form prop as required by DriverFormProps */}
-      <DriverForm
-        form={{
-          values: {
-            firstName: "",
-            lastName: "",
-            email: "",
-            phone: "",
-            hireDate: "",
-            homeTerminal: "",
-            cdlNumber: "",
-            cdlState: "",
-            cdlClass: "A",
-            cdlExpiration: "",
-            medicalCardExpiration: "",
-            tags: [],
-          },
-          errors: {},
-          onChange: () => {},
-          onSubmit: async () => {},
-          submitting: false,
-          mode: "create",
-        }}
-      />
+      <DriverFormFeature mode="create" orgId={orgId} />
     </div>
   );
 }
