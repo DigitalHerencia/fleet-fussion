@@ -14,6 +14,7 @@ import { parsePermission } from '@/lib/auth/permissions';
 import { z } from 'zod';
 import { handleError } from "@/lib/errors/handleError";
 import { getCachedData, setCachedData, CACHE_TTL } from "@/lib/cache/auth-cache";
+import { calculateHosStatus } from '@/lib/utils/hos';
 
 /**
  * Get compliance dashboard overview data
@@ -636,7 +637,6 @@ export async function getDriverHOSStatus(driverId: string) {
     }
 
     const today = new Date();
-    const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
     const eightDaysAgo = new Date(today.getTime() - 8 * 24 * 60 * 60 * 1000);
 
     // Get recent HOS logs for the driver
@@ -654,27 +654,27 @@ export async function getDriverHOSStatus(driverId: string) {
       },
       take: 10,
     });
+    // Convert metadata to HosLog objects
+    const hosLogs: HosLog[] = recentLogs.map((doc) => {
+      let meta: any = doc.metadata;
+      if (typeof meta === 'string') {
+        try { meta = JSON.parse(meta); } catch { meta = {}; }
+      }
+      return {
+        ...(meta as any),
+        id: doc.id,
+        tenantId: orgId,
+        driverId,
+        date: doc.createdAt,
+        status: doc.status as any,
+      } as HosLog;
+    });
 
-    // Calculate available hours (simplified logic - would need actual HOS entries)
-    const mockHOSStatus = {
-      driverId,
-      currentStatus: 'off_duty',
-      availableDriveTime: 11 * 60, // 11 hours in minutes
-      availableOnDutyTime: 14 * 60, // 14 hours in minutes
-      usedDriveTime: 0,
-      usedOnDutyTime: 0,
-      cycleHours: 70 * 60, // 70 hours in minutes
-      usedCycleHours: 0,
-      restartAvailable: false,
-      violations: [],
-      lastLoggedAt: recentLogs[0]?.createdAt || null,
-      complianceStatus: recentLogs.length > 0 ? 'compliant' : 'pending',
-    };
-
-    setCachedData(cacheKey, mockHOSStatus, CACHE_TTL.SHORT);
+    const hosStatus = calculateHosStatus(driverId, hosLogs);
+    setCachedData(cacheKey, hosStatus, CACHE_TTL.SHORT);
     return {
       success: true,
-      data: mockHOSStatus,
+      data: hosStatus,
     };
   } catch (error) {
     console.error('Error fetching driver HOS status:', error);
