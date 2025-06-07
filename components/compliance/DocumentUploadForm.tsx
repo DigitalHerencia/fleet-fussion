@@ -1,10 +1,16 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { saveUploadedDocument } from "@/lib/actions/fileUploadActions";
-import { upload } from "@vercel/blob/client";
+import { saveUploadedDocument, generateBlobUploadUrl } from "@/lib/actions/fileUploadActions";
 
-export function DocumentUploadForm({ onUpload }: { onUpload: (file: File, metadata: any) => void }) {
+type Props = {
+  entityType: 'driver' | 'vehicle' | 'trailer' | 'company';
+  entityId: string;
+  documentType?: string;
+  onUpload: (file: File, metadata: any) => void;
+};
+
+export function DocumentUploadForm({ entityType, entityId, documentType = 'other', onUpload }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -24,19 +30,32 @@ export function DocumentUploadForm({ onUpload }: { onUpload: (file: File, metada
     }
     setUploading(true);
     try {
-      // const token = process.env.NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN;
-      const { url } = await upload(file.name, file, {
-        access: "public",
-        handleUploadUrl: "/api/files/upload",
+      const signed = await generateBlobUploadUrl(file.name, file.type);
+      if (!signed.success || !('data' in signed)) {
+        setError('Unable to obtain upload URL');
+        return;
+      }
+      const { url, token } = signed.data;
+      const uploadRes = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'content-type': file.type,
+          'x-vercel-blob-token': token,
+        },
+        body: file,
       });
+      if (!uploadRes.ok) {
+        throw new Error('Upload failed');
+      }
+      const blobUrl = url.split('?')[0];
       const result = await saveUploadedDocument({
         fileName: file.name,
         fileSize: file.size,
         mimeType: file.type,
-        url,
-        entityType: "company", // TODO: make dynamic
-        entityId: "demo-entity-id", // TODO: make dynamic
-        documentType: "other",
+        url: blobUrl,
+        entityType,
+        entityId,
+        documentType,
       });
       if (result.success && 'data' in result) {
         onUpload(file, result.data);

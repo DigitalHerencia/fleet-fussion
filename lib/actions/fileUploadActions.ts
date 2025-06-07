@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { db } from '../database/db';
 import { getCurrentUser } from '@/lib/auth/auth';
 import { handleError } from '@/lib/errors/handleError';
+import { generateUploadUrl } from '@vercel/blob';
 
 export const fileUploadSchema = z.object({
   fileName: z.string().min(1),
@@ -44,5 +45,20 @@ export async function saveUploadedDocument(data: z.infer<typeof fileUploadSchema
     return { success: true, data: doc };
   } catch (error) {
     return handleError(error, 'File Upload Action');
+  }
+}
+
+export async function generateBlobUploadUrl(fileName: string, mimeType: string) {
+  try {
+    const user = await getCurrentUser();
+    if (!user?.userId || !user?.organizationId) throw new Error('Unauthorized');
+    const { url, token, pathname } = await generateUploadUrl({
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+      contentType: mimeType,
+      pathname: fileName,
+    });
+    return { success: true, data: { url, token, pathname } };
+  } catch (error) {
+    return handleError(error, 'Generate Upload URL');
   }
 }
