@@ -7,13 +7,14 @@ import { createDriverAction, updateDriverAction } from "@/lib/actions/driverActi
 import { toast } from "@/hooks/use-toast";
 
 export interface DriverFormFeatureProps {
-  initialValues?: z.infer<typeof driverFormSchema>;
-  mode: "create" | "edit";
-  driverId?: string;
-  onSuccess?: () => void;
+  orgId: string
+  initialValues?: z.infer<typeof driverFormSchema>
+  mode: "create" | "edit"
+  driverId?: string
+  onSuccess?: () => void
 }
 
-export function DriverFormFeature({ initialValues, mode, driverId, onSuccess }: DriverFormFeatureProps) {
+export function DriverFormFeature({ orgId, initialValues, mode, driverId, onSuccess }: DriverFormFeatureProps) {
   const [form, setForm] = useState<{
     values: z.infer<typeof driverFormSchema>;
     errors: Record<string, string>;
@@ -76,7 +77,7 @@ export function DriverFormFeature({ initialValues, mode, driverId, onSuccess }: 
       if (mode === "edit" && driverId) {
         result = await updateDriverAction(driverId, parsed);
       } else {
-        result = await createDriverAction("", parsed); // TODO: pass tenant/org id
+        result = await createDriverAction(orgId, parsed);
       }
       if (result.success) {
         toast({ title: "Driver saved", description: "Driver profile has been updated." });
@@ -91,7 +92,6 @@ export function DriverFormFeature({ initialValues, mode, driverId, onSuccess }: 
   }
 
   function handleUploadDocument() {
-    // TODO: Open document upload dialog/modal for driver
     toast({ title: "Document upload", description: "Document upload not yet implemented." });
   }
 
