@@ -128,7 +128,11 @@ export default async function DriverDashboardPage({ params }: { params: Promise<
             <CardDescription>Upload a new document for this driver</CardDescription>
           </CardHeader>
           <CardContent>
-            <DocumentUploadForm onUpload={() => {}} />
+            <DocumentUploadForm
+              onUpload={() => {}}
+              entityType="driver"
+              entityId={driverData.id}
+            />
           </CardContent>
         </Card>
       </div>

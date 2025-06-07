@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { db } from '../database/db';
 import { getCurrentUser } from '@/lib/auth/auth';
 import { handleError } from '@/lib/errors/handleError';
+import { generateClientTokenFromReadWriteToken } from '@vercel/blob/client';
 
 export const fileUploadSchema = z.object({
   fileName: z.string().min(1),
@@ -44,5 +45,24 @@ export async function saveUploadedDocument(data: z.infer<typeof fileUploadSchema
     return { success: true, data: doc };
   } catch (error) {
     return handleError(error, 'File Upload Action');
+  }
+}
+
+export async function getSignedUploadToken(filename: string) {
+  try {
+    const user = await getCurrentUser();
+    const userId = user?.userId;
+    const orgId = user?.organizationId;
+    if (!userId || !orgId) throw new Error('Unauthorized');
+
+    const pathname = `${orgId}/${userId}/${Date.now()}-${filename}`;
+    const token = await generateClientTokenFromReadWriteToken({
+      pathname,
+      token: process.env.NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN,
+    });
+
+    return { success: true, token, pathname };
+  } catch (error) {
+    return handleError(error, 'Get Signed Upload Token');
   }
 }

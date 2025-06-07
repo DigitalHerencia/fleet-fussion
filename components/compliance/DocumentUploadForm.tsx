@@ -1,10 +1,19 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { saveUploadedDocument } from "@/lib/actions/fileUploadActions";
-import { upload } from "@vercel/blob/client";
+import { saveUploadedDocument, getSignedUploadToken } from "@/lib/actions/fileUploadActions";
+import { put } from "@vercel/blob/client";
 
-export function DocumentUploadForm({ onUpload }: { onUpload: (file: File, metadata: any) => void }) {
+type EntityType = 'driver' | 'vehicle' | 'trailer' | 'company';
+
+interface DocumentUploadFormProps {
+  onUpload: (file: File, metadata: any) => void;
+  entityType: EntityType;
+  entityId: string;
+  documentType?: string;
+}
+
+export function DocumentUploadForm({ onUpload, entityType, entityId, documentType = 'other' }: DocumentUploadFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -24,19 +33,24 @@ export function DocumentUploadForm({ onUpload }: { onUpload: (file: File, metada
     }
     setUploading(true);
     try {
-      // const token = process.env.NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN;
-      const { url } = await upload(file.name, file, {
-        access: "public",
-        handleUploadUrl: "/api/files/upload",
-      });
+      const tokenRes = await getSignedUploadToken(file.name);
+      if (!tokenRes.success || !('token' in tokenRes) || !tokenRes.token) {
+        const errMsg = 'error' in tokenRes && tokenRes.error ? tokenRes.error : 'Failed to get upload token';
+        setError(errMsg);
+        return;
+      }
+      const { token, pathname } = tokenRes as { token: string; pathname: string; success: true };
+
+      const { url } = await put(pathname, file, { access: 'public', token });
+
       const result = await saveUploadedDocument({
         fileName: file.name,
         fileSize: file.size,
         mimeType: file.type,
         url,
-        entityType: "company", // TODO: make dynamic
-        entityId: "demo-entity-id", // TODO: make dynamic
-        documentType: "other",
+        entityType,
+        entityId,
+        documentType,
       });
       if (result.success && 'data' in result) {
         onUpload(file, result.data);
