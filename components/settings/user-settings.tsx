@@ -23,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MoreHorizontal, Plus, Search, Mail, Users, UserCheck, Loader2 } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { SystemRoles, type SystemRole } from "@/types/abac"
-import { createOrganizationInvitation, getOrganizationInvitations, type InvitationData } from "@/lib/actions/invitationActions"
+import { createOrganizationInvitation, getOrganizationInvitations, revokeOrganizationInvitation, type InvitationData } from "@/lib/actions/invitationActions"
 
 interface OrganizationInvitation {
   id: string
@@ -87,10 +87,14 @@ export function UserSettings() {
 
     setLoadingInvitations(true)
     try {
-      const result = await getOrganizationInvitations(user.publicMetadata.organizationId as string)
-      // Note: Since Clerk doesn't provide direct invitation listing, we'll show a placeholder
-      // In a real implementation, you'd track invitations in your own database
-      setInvitations([])
+      const result = await getOrganizationInvitations(
+        user.publicMetadata.organizationId as string
+      )
+      if (success(result)) {
+        setInvitations(result.invitations as OrganizationInvitation[])
+      } else {
+        setInvitations([])
+      }
     } catch (error) {
       console.error("Error loading invitations:", error)
       setInvitations([])
@@ -108,12 +112,9 @@ export function UserSettings() {
 
   const handleRevokeInvitation = async (invitationId: string) => {
     try {
-      // TODO: Implement actual revoke logic here, e.g. call an API or action
-      // Example:
-      // const result = await revokeOrganizationInvitation(invitationId)
-      const result = { success: false, error: "Revoke not implemented" } // Placeholder
+      const result = await revokeOrganizationInvitation(invitationId)
 
-      if (result.success) {
+      if (success(result)) {
         toast({
           title: "Invitation Revoked",
           description: "The invitation has been successfully revoked.",
@@ -122,7 +123,8 @@ export function UserSettings() {
       } else {
         toast({
           title: "Failed to Revoke Invitation",
-          description: result.error || "An error occurred while revoking the invitation.",
+          description:
+            result?.error || "An error occurred while revoking the invitation.",
           variant: "destructive",
         })
       }
