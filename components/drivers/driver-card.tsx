@@ -21,7 +21,7 @@ interface Driver {
 
 interface DriverCardProps {
   driver: Driver
-  onClick: () => void
+  onClick?: () => void
 }
 
 export function DriverCard({ driver, onClick }: DriverCardProps) {
@@ -43,7 +43,10 @@ export function DriverCard({ driver, onClick }: DriverCardProps) {
   }
 
   return (
-    <Card className="cursor-pointer bg-black hover:shadow-md transition-shadow" onClick={onClick}>
+    <Card
+      className="cursor-pointer bg-black hover:shadow-md transition-shadow"
+      {...(onClick ? { onClick } : {})}
+    >
       <CardHeader className="pb-2 flex flex-row items-center space-y-0 gap-4">
         <Avatar className="h-12 w-12">
           <AvatarFallback>{getInitials(driver.firstName, driver.lastName)}</AvatarFallback>

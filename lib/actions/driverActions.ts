@@ -4,6 +4,9 @@ import { UserContext } from "@/types/auth";
 import { auth } from "@clerk/nextjs/server"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
+import { getCurrentUser } from "@/lib/auth/auth"
+import { hasPermission } from "@/lib/auth/permissions"
+import { PermissionActions, ResourceTypes } from "@/types/abac"
 import type {
   Driver,
   DriverFormData,
@@ -55,9 +58,12 @@ export async function createDriverAction(
     return { success: false, error: parsed.error.message }
   }
   try {
-    const { userId } = await auth()
-    if (!userId) {
+    const user = await getCurrentUser()
+    if (!user) {
       return { success: false, error: "Authentication required", code: "UNAUTHORIZED" }
+    }
+    if (!hasPermission(user, PermissionActions.CREATE, ResourceTypes.DRIVER)) {
+      return { success: false, error: "Insufficient permissions", code: "FORBIDDEN" }
     }
 
     // Validate permissions
@@ -453,9 +459,12 @@ export async function assignDriverAction(
   assignmentData: z.infer<typeof driverAssignmentSchema>
 ): Promise<DriverActionResult> {
   try {
-    const { userId } = await auth()
-    if (!userId) {
+    const user = await getCurrentUser()
+    if (!user) {
       return { success: false, error: "Authentication required", code: "UNAUTHORIZED" }
+    }
+    if (!hasPermission(user, PermissionActions.ASSIGN, ResourceTypes.DRIVER)) {
+      return { success: false, error: "Insufficient permissions", code: "FORBIDDEN" }
     }
 
     // Validate input
@@ -578,8 +587,8 @@ export async function assignDriverAction(
               instructions: validatedData.instructions,
               notes: `${validatedData.assignmentType} assignment`,
               priority: validatedData.priority === 'urgent' ? 'urgent' : validatedData.priority === 'high' ? 'high' : 'medium',
-              createdBy: userId,
-              lastModifiedBy: userId,
+              createdBy: user.userId,
+              lastModifiedBy: user.userId,
             }
           })
 
@@ -622,7 +631,7 @@ export async function assignDriverAction(
         loadId: validatedData.loadId,
         vehicleId: validatedData.vehicleId,
         assignmentType: validatedData.assignmentType,
-        assignedBy: userId 
+        assignedBy: user.userId
       }
     )
 
@@ -659,10 +668,14 @@ export async function assignDriverAction(
  */
 export async function unassignDriverAction(driverId: string): Promise<DriverActionResult> {
   try {
-    const { userId } = await auth()
-    if (!userId) {
+    const user = await getCurrentUser()
+    if (!user) {
       return { success: false, error: "Authentication required", code: "UNAUTHORIZED" }
-    }    // Get driver with current assignments
+    }
+    if (!hasPermission(user, PermissionActions.ASSIGN, ResourceTypes.DRIVER)) {
+      return { success: false, error: "Insufficient permissions", code: "FORBIDDEN" }
+    }
+    // Get driver with current assignments
     const driver = await db.driver.findUnique({
       where: { id: driverId },
       include: {
@@ -741,7 +754,7 @@ export async function unassignDriverAction(driverId: string): Promise<DriverActi
       driverId, 
       { 
         loadIds: driver.loads.map(l => l.id),
-        unassignedBy: userId 
+        unassignedBy: user.userId
       }
     )
 

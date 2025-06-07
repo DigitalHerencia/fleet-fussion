@@ -1,6 +1,7 @@
 import { listDriversByOrg } from "@/lib/fetchers/driverFetchers";
 import { DriverCard } from "@/components/drivers/driver-card";
-import { DriverForm } from "@/components/drivers/DriverForm";
+import Link from "next/link";
+import { DriverFormFeature } from "@/features/drivers/DriverFormFeature";
 import type { DriverFilters } from "@/types/drivers";
 
 interface DriverListPageProps {
@@ -26,57 +27,34 @@ export default async function DriverListPage({
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {drivers.map((driver) => (
-          <DriverCard
-            key={driver.id}
-            driver={{
-              id: driver.id ?? "",
-              firstName: driver.firstName ?? "",
-              lastName: driver.lastName ?? "",
-              email: driver.email ?? "",
-              phone: driver.phone ?? "",
-              status: driver.status ?? "",
-              licenseState: driver.cdlState ?? "",
-              licenseExpiration:
-                driver.cdlExpiration !== null && driver.cdlExpiration !== undefined
-                  ? new Date(driver.cdlExpiration)
-                  : new Date(0),
-              medicalCardExpiration:
-                driver.medicalCardExpiration !== null && driver.medicalCardExpiration !== undefined
-                  ? new Date(driver.medicalCardExpiration)
-                  : new Date(0),
-              hireDate:
-                driver.hireDate !== null && driver.hireDate !== undefined
-                  ? new Date(driver.hireDate)
-                  : new Date(0),
-            }}
-            onClick={() => {}}
-          />
+          <Link key={driver.id} href={`/${orgId}/drivers/${driver.id}`}>
+            <DriverCard
+              driver={{
+                id: driver.id ?? "",
+                firstName: driver.firstName ?? "",
+                lastName: driver.lastName ?? "",
+                email: driver.email ?? "",
+                phone: driver.phone ?? "",
+                status: driver.status ?? "",
+                licenseState: driver.cdlState ?? "",
+                licenseExpiration:
+                  driver.cdlExpiration !== null && driver.cdlExpiration !== undefined
+                    ? new Date(driver.cdlExpiration)
+                    : new Date(0),
+                medicalCardExpiration:
+                  driver.medicalCardExpiration !== null && driver.medicalCardExpiration !== undefined
+                    ? new Date(driver.medicalCardExpiration)
+                    : new Date(0),
+                hireDate:
+                  driver.hireDate !== null && driver.hireDate !== undefined
+                    ? new Date(driver.hireDate)
+                    : new Date(0),
+              }}
+            />
+          </Link>
         ))}
       </div>
-      {/* Pass a form prop as required by DriverFormProps */}
-      <DriverForm
-        form={{
-          values: {
-            firstName: "",
-            lastName: "",
-            email: "",
-            phone: "",
-            hireDate: "",
-            homeTerminal: "",
-            cdlNumber: "",
-            cdlState: "",
-            cdlClass: "A",
-            cdlExpiration: "",
-            medicalCardExpiration: "",
-            tags: [],
-          },
-          errors: {},
-          onChange: () => {},
-          onSubmit: async () => {},
-          submitting: false,
-          mode: "create",
-        }}
-      />
+      <DriverFormFeature mode="create" orgId={orgId} />
     </div>
   );
 }
