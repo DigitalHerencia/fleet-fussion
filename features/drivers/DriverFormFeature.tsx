@@ -1,19 +1,37 @@
 "use client";
 import React, { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { DocumentUploadForm } from "@/components/compliance/DocumentUploadForm";
 import { z } from "zod";
 import { driverFormSchema } from "@/schemas/drivers";
 import { DriverForm } from "@/components/drivers/DriverForm";
-import { createDriverAction, updateDriverAction } from "@/lib/actions/driverActions";
+import {
+  createDriverAction,
+  updateDriverAction,
+} from "@/lib/actions/driverActions";
 import { toast } from "@/hooks/use-toast";
 
 export interface DriverFormFeatureProps {
   initialValues?: z.infer<typeof driverFormSchema>;
   mode: "create" | "edit";
   driverId?: string;
+  /** Tenant/organization id for create operations */
+  orgId?: string;
   onSuccess?: () => void;
 }
 
-export function DriverFormFeature({ initialValues, mode, driverId, onSuccess }: DriverFormFeatureProps) {
+export function DriverFormFeature({
+  initialValues,
+  mode,
+  driverId,
+  orgId,
+  onSuccess,
+}: DriverFormFeatureProps) {
   const [form, setForm] = useState<{
     values: z.infer<typeof driverFormSchema>;
     errors: Record<string, string>;
@@ -21,25 +39,29 @@ export function DriverFormFeature({ initialValues, mode, driverId, onSuccess }: 
     serverError: string | undefined;
     mode: "create" | "edit";
   }>({
-    values: initialValues || driverFormSchema.parse({
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      hireDate: "",
-      homeTerminal: "",
-      cdlNumber: "",
-      cdlState: "",
-      cdlClass: "A",
-      cdlExpiration: "",
-      medicalCardExpiration: "",
-      notes: "",
-    }),
+    values:
+      initialValues ||
+      driverFormSchema.parse({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        hireDate: "",
+        homeTerminal: "",
+        cdlNumber: "",
+        cdlState: "",
+        cdlClass: "A",
+        cdlExpiration: "",
+        medicalCardExpiration: "",
+        notes: "",
+      }),
     errors: {},
     submitting: false,
     serverError: undefined,
     mode,
   });
+
+  const [showUpload, setShowUpload] = useState(false);
 
   function handleChange(field: string, value: any) {
     setForm((prev) => {
@@ -68,7 +90,11 @@ export function DriverFormFeature({ initialValues, mode, driverId, onSuccess }: 
         setForm((prev) => ({ ...prev, errors, submitting: false }));
         return;
       }
-      setForm((prev) => ({ ...prev, serverError: "Validation failed", submitting: false }));
+      setForm((prev) => ({
+        ...prev,
+        serverError: "Validation failed",
+        submitting: false,
+      }));
       return;
     }
     try {
@@ -76,33 +102,61 @@ export function DriverFormFeature({ initialValues, mode, driverId, onSuccess }: 
       if (mode === "edit" && driverId) {
         result = await updateDriverAction(driverId, parsed);
       } else {
-        result = await createDriverAction("", parsed); // TODO: pass tenant/org id
+        if (!orgId) {
+          setForm((prev) => ({
+            ...prev,
+            serverError: "Organization ID required",
+            submitting: false,
+          }));
+          return;
+        }
+        result = await createDriverAction(orgId, parsed);
       }
       if (result.success) {
-        toast({ title: "Driver saved", description: "Driver profile has been updated." });
+        toast({
+          title: "Driver saved",
+          description: "Driver profile has been updated.",
+        });
         setForm((prev) => ({ ...prev, submitting: false }));
         onSuccess?.();
       } else {
-        setForm((prev) => ({ ...prev, serverError: result.error || "Failed to save", submitting: false }));
+        setForm((prev) => ({
+          ...prev,
+          serverError: result.error || "Failed to save",
+          submitting: false,
+        }));
       }
     } catch (err) {
-      setForm((prev) => ({ ...prev, serverError: "Server error", submitting: false }));
+      setForm((prev) => ({
+        ...prev,
+        serverError: "Server error",
+        submitting: false,
+      }));
     }
   }
 
   function handleUploadDocument() {
-    // TODO: Open document upload dialog/modal for driver
-    toast({ title: "Document upload", description: "Document upload not yet implemented." });
+    setShowUpload(true);
   }
 
   return (
-    <DriverForm
-      form={{
-        ...form,
-        onChange: handleChange,
-        onSubmit: handleSubmit,
-      }}
-      onUploadDocument={handleUploadDocument}
-    />
+    <>
+      <DriverForm
+        form={{
+          ...form,
+          onChange: handleChange,
+          onSubmit: handleSubmit,
+        }}
+        onUploadDocument={handleUploadDocument}
+      />
+      <Dialog open={showUpload} onOpenChange={setShowUpload}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upload Document</DialogTitle>
+          </DialogHeader>
+          <DocumentUploadForm onUpload={() => setShowUpload(false)} />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

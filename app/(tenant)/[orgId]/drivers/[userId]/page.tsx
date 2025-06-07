@@ -1,36 +1,47 @@
 /**
  * Driver Dashboard Page
- * 
+ *
  * Individual driver dashboard for viewing assigned loads, HOS status, and compliance info
  */
 
-import { Suspense, type JSX } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { 
-  Clock} from 'lucide-react'
-import { getDriverById } from '@/lib/fetchers/driverFetchers';
-import { notFound } from 'next/navigation';
-import { DriverFormFeature } from '@/features/drivers/DriverFormFeature';
-import { DriverPerformance } from '@/components/analytics/driver-performance';
-import { getDriverAnalytics } from '@/lib/fetchers/analyticsFetchers';
-import { DocumentUploadForm } from '@/components/compliance/DocumentUploadForm';
-import { getDriverHOSStatus } from '@/lib/fetchers/complianceFetchers';
-import { use } from 'react';
-import { AssignmentDialogButton } from '@/features/drivers/AssignmentDialogButton'; // new client component
+import { Suspense, type JSX } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Clock } from "lucide-react";
+import { getDriverById } from "@/lib/fetchers/driverFetchers";
+import { notFound } from "next/navigation";
+import { DriverFormFeature } from "@/features/drivers/DriverFormFeature";
+import { DriverPerformance } from "@/components/analytics/driver-performance";
+import { getDriverAnalytics } from "@/lib/fetchers/analyticsFetchers";
+import { DocumentUploadForm } from "@/components/compliance/DocumentUploadForm";
+import { getDriverHOSStatus } from "@/lib/fetchers/complianceFetchers";
+import { use } from "react";
+import { AssignmentDialogButton } from "@/features/drivers/AssignmentDialogButton"; // new client component
 
 // Helper to safely extract assignment info
 function getAssignmentLabel(assignment: any) {
-  if (assignment && typeof assignment === 'object') {
-    return assignment.loadId || assignment.vehicleId || assignment.trailerId || 'N/A';
+  if (assignment && typeof assignment === "object") {
+    return (
+      assignment.loadId || assignment.vehicleId || assignment.trailerId || "N/A"
+    );
   }
-  return 'N/A';
+  return "N/A";
 }
 
-export default async function DriverDashboardPage({ params }: { params: Promise<{ userId: string, orgId: string }> }): Promise<JSX.Element> {
-  const { userId, orgId } = await params
+export default async function DriverDashboardPage({
+  params,
+}: {
+  params: Promise<{ userId: string; orgId: string }>;
+}): Promise<JSX.Element> {
+  const { userId, orgId } = await params;
   // Fetch driver data by ID
   const driverData = await getDriverById(userId);
   if (!driverData) return notFound();
@@ -41,15 +52,17 @@ export default async function DriverDashboardPage({ params }: { params: Promise<
   // @ts-expect-error: use() is React 19 experimental
   const hosStatus = use(hosStatusPromise, { revalidate: 10 });
   let currentStatus: string = driverData.status;
-  if (hosStatus && typeof hosStatus === 'object') {
+  if (hosStatus && typeof hosStatus === "object") {
     const hs = hosStatus as any;
-    if (hs.data && typeof hs.data.currentStatus === 'string') {
+    if (hs.data && typeof hs.data.currentStatus === "string") {
       currentStatus = hs.data.currentStatus;
     }
   }
   // Fetch analytics for this driver
   const analytics = await getDriverAnalytics(orgId, "30d");
-  const driverAnalytics = Array.isArray(analytics) ? analytics.find(a => a.id === driverData.id) : null;
+  const driverAnalytics = Array.isArray(analytics)
+    ? analytics.find((a) => a.id === driverData.id)
+    : null;
 
   return (
     <>
@@ -57,17 +70,30 @@ export default async function DriverDashboardPage({ params }: { params: Promise<
         {/* Page Header with real-time status */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Driver Dashboard</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Driver Dashboard
+            </h1>
             <p className="text-muted-foreground">
               Status: <span className="font-semibold">{currentStatus}</span>
-              <span className="ml-4">Assigned to: <span className="font-semibold">{getAssignmentLabel(driverData.currentAssignment)}</span></span>
+              <span className="ml-4">
+                Assigned to:{" "}
+                <span className="font-semibold">
+                  {getAssignmentLabel(driverData.currentAssignment)}
+                </span>
+              </span>
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+            <Badge
+              variant="outline"
+              className="bg-green-50 text-green-700 border-green-200"
+            >
               On Duty
             </Badge>
-            <Button variant="default" className="bg-black border border-gray-200 hover:bg-neutral-800">
+            <Button
+              variant="default"
+              className="bg-black border border-gray-200 hover:bg-neutral-800"
+            >
               <Clock className="mr-2 h-4 w-4" />
               Log Hours
             </Button>
@@ -96,7 +122,9 @@ export default async function DriverDashboardPage({ params }: { params: Promise<
         <Card className="bg-black">
           <CardHeader>
             <CardTitle>Edit Profile & Documents</CardTitle>
-            <CardDescription>Update your driver profile and upload compliance documents</CardDescription>
+            <CardDescription>
+              Update your driver profile and upload compliance documents
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Suspense fallback={<LoadingSpinner />}>
@@ -104,6 +132,7 @@ export default async function DriverDashboardPage({ params }: { params: Promise<
                 initialValues={driverData}
                 mode="edit"
                 driverId={driverData.id}
+                orgId={orgId}
               />
             </Suspense>
           </CardContent>
@@ -111,13 +140,19 @@ export default async function DriverDashboardPage({ params }: { params: Promise<
 
         {/* Assignment Button (client only) */}
         <div className="flex justify-end mb-4">
-          <AssignmentDialogButton driverId={driverData.id} currentAssignment={driverData.currentAssignment} />
+          <AssignmentDialogButton
+            driverId={driverData.id}
+            currentAssignment={driverData.currentAssignment}
+          />
         </div>
 
         {/* Analytics Section */}
         {driverAnalytics && (
           <div className="mb-8">
-            <DriverPerformance driverPerformanceMetrics={[driverAnalytics]} timeRange="30d" />
+            <DriverPerformance
+              driverPerformanceMetrics={[driverAnalytics]}
+              timeRange="30d"
+            />
           </div>
         )}
 
@@ -125,7 +160,9 @@ export default async function DriverDashboardPage({ params }: { params: Promise<
         <Card className="bg-black">
           <CardHeader>
             <CardTitle>Upload Compliance Document</CardTitle>
-            <CardDescription>Upload a new document for this driver</CardDescription>
+            <CardDescription>
+              Upload a new document for this driver
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <DocumentUploadForm onUpload={() => {}} />
@@ -133,7 +170,7 @@ export default async function DriverDashboardPage({ params }: { params: Promise<
         </Card>
       </div>
     </>
-  )
+  );
 }
 
 // --- Server Components for dashboard sections ---
@@ -198,4 +235,3 @@ function PerformanceOverviewCard({ analytics }: { analytics: any }) {
     </Card>
   );
 }
-
