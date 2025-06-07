@@ -5,8 +5,9 @@ import { revalidatePath } from "next/cache";
 import prisma from "@/lib/database/db";
 import { hasPermission } from "@/lib/auth/permissions";
 import { getOrganizationKPIs } from "@/lib/fetchers/kpiFetchers";
+import type { OrganizationKPIs } from "@/types/kpi";
 
-export interface DashboardActionResult<T = any> {
+export interface DashboardActionResult<T = unknown> {
   success: boolean;
   error?: string;
   data?: T;
@@ -15,7 +16,7 @@ export interface DashboardActionResult<T = any> {
 /**
  * Get dashboard overview statistics
  */
-export async function getDashboardOverviewAction(): Promise<DashboardActionResult> {
+export async function getDashboardOverviewAction(): Promise<DashboardActionResult<OrganizationKPIs>> {
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -378,7 +379,7 @@ export async function getTodaysScheduleAction(organizationId: string): Promise<D
 /**
  * Refresh dashboard data
  */
-export async function refreshDashboardAction(): Promise<DashboardActionResult> {
+export async function refreshDashboardAction(): Promise<DashboardActionResult<{ message: string }>> {
   try {
     const { userId } = await auth();
     if (!userId) {

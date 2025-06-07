@@ -22,13 +22,7 @@ export default async function TodaysScheduleWidget({ orgId }: TodaysScheduleWidg
   try {
     const result = await getTodaysScheduleAction(orgId);
     if (result.success && Array.isArray(result.data)) {
-      scheduleItems = result.data.map((item: any) => ({
-        id: item.id,
-        description: item.description,
-        timePeriod: item.timePeriod || "Today",
-        count: item.count ?? 0,
-        type: item.type ?? "none",
-      }));
+      scheduleItems = result.data;
     }
   } catch (e) {
     scheduleItems = [];

@@ -18,13 +18,7 @@ export default async function RecentAlertsWidget({ orgId }: RecentAlertsWidgetPr
   try {
     const result = await getDashboardAlertsAction(orgId);
     if (result.success && Array.isArray(result.data)) {
-      alerts = result.data.map((a: any) => ({
-        id: a.id,
-        message: a.message,
-        severity: a.severity as Alert["severity"],
-        timestamp: a.timestamp,
-        type: a.type ?? "other",
-      }));
+      alerts = result.data;
     }
   } catch (e) {
     alerts = [];
