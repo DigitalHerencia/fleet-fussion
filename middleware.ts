@@ -286,7 +286,7 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
   // [G] Check org context in route vs. user context (if applicable)
   // Example: /[orgId]/...
   const orgPathMatch = pathname.match(
-    /^\/([^\\/]+)\/(?:dashboard|drivers|dispatch|compliance|vehicles|analytics|ifta|settings)/
+    /^\/([^\\/]+)\/(?:dashboard|drivers|dispatch|compliance|vehicles|analytics|ifta|settings|admin)/
   );
   if (orgPathMatch && orgPathMatch[1]) {
     const requestedOrgId = orgPathMatch[1];

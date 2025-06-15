@@ -82,7 +82,7 @@ const nextConfig = {
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true, // Allow SVG for icons
     contentDispositionType: 'inline', // Change from attachment to inline
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    contentSecurityPolicy: "default-src 'self'; script-src 'self'; object-src 'none';",
     // Add loader for better performance
     loader: 'default',    // Disable static imports for better dynamic loading
     unoptimized: false,

@@ -16,8 +16,8 @@ import {
   canManageUsers,
   canManageLoads,
   isAdmin as abacIsAdmin,
-} from '@/types/abac';
-import type { UserContext } from '@/types/auth';
+} from '../../types/abac';
+import type { UserContext } from '../../types/auth';
 
 /**
  * Check if a user has a specific permission (by permission string)
@@ -280,6 +280,9 @@ export class RouteProtection {
       SystemRoles.COMPLIANCE,
       SystemRoles.MEMBER,
     ],
+    // Admin dashboard: Admin only
+    '/:orgId/admin': [SystemRoles.ADMIN],
+    '/:orgId/admin/:userId': [SystemRoles.ADMIN],
     // Vehicles list: Admin, Dispatcher, Compliance (for inspections), Member
     '/:orgId/vehicles': [
       SystemRoles.ADMIN,
