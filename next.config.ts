@@ -31,16 +31,15 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'fleet-fusion.vercel.app',
+        pathname: '/**',      },
+      {
+        protocol: 'https',
+        hostname: 'clerk.dev',
         pathname: '/**',
       },
       {
         protocol: 'https',
-        hostname: '*.clerk.dev',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: '*.clerk.accounts.dev',
+        hostname: 'clerk.accounts.dev',
         pathname: '/**',
       },
       {
@@ -68,11 +67,10 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'www.gstatic.com',
-        pathname: '/**',
-      },
+        pathname: '/**',      },
       {
         protocol: 'https',
-        hostname: '*.clerk.com',
+        hostname: 'clerk.com',
         pathname: '/**',
       },
     ],
@@ -98,14 +96,12 @@ const nextConfig = {
       },
     },
   },
-  
-  experimental: {
+    experimental: {
     // Next.js 15 specific features
     serverActions: {
       allowedOrigins: [
         'localhost:3000',
-        'fleet-fusion.vercel.app',
-        'liberal-gull-quietly.ngrok-free.app:3000',
+        'fleet-fusion.vercel.app'
       ],
       bodySizeLimit: '2mb',
     },
