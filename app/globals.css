@@ -48,4 +48,12 @@
   --color-chart-3: 41 97% 56%;
   --color-chart-4: 340 82% 52%;
   --color-chart-5: 271 91% 65%;
+
+  /* Sidebar colors */
+  --color-sidebar: 240 8% 12%;
+  --color-sidebar-foreground: 0 0% 98%;
+  --color-sidebar-border: 240 4% 20%;
+  --color-sidebar-accent: 240 5% 18%;
+  --color-sidebar-accent-foreground: 0 0% 98%;
+  --color-sidebar-ring: 217 91% 65%;
 }
