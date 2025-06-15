@@ -55,6 +55,23 @@ async function checkIftaPermissions(orgId: string) {
   return user;
 }
 
+export async function fetchIftaDataAction(
+  orgId: string,
+  quarter: string,
+  year: string
+) {
+  try {
+    await checkIftaPermissions(orgId);
+    const data = await getIftaDataForPeriod(orgId, quarter, year);
+    return { success: true, data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch IFTA data',
+    };
+  }
+}
+
 export async function logIftaTripDataAction(
   orgId: string,
   vehicleId: string,

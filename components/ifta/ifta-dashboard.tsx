@@ -31,7 +31,8 @@ import { Progress } from '@/components/ui/progress';
 
 import { IftaReportTable } from './ifta-report-table';
 import { IftaTripTable } from './ifta-trip-table';
-import { getIftaDataForPeriod } from '@/lib/fetchers/iftaFetchers';
+import { fetchIftaDataAction } from '@/lib/actions/iftaActions';
+import { validateIftaPeriodData } from '@/lib/utils/ifta';
 
 type IftaData = IftaPeriodData;
 
@@ -51,7 +52,8 @@ export function IftaDashboard() {
         setLoading(true);
         const [quarterPart, yearPart] = quarter.split('-');
 
-        const data = await getIftaDataForPeriod(orgId, quarterPart, yearPart);
+        const actionResult = await fetchIftaDataAction(orgId, quarterPart, yearPart);
+        const data = actionResult.success ? actionResult.data : null;
         if (validateIftaPeriodData(data)) {
           setIftaData(data);
           setError(null);
@@ -534,28 +536,5 @@ export function IftaDashboard() {
   );
 }
 
-function validateIftaPeriodData(data: IftaPeriodData | any): boolean {
-  // Basic runtime validation for required fields
-  if (
-    typeof data !== 'object' ||
-    data === null ||
-    typeof data.summary !== 'object' ||
-    !Array.isArray(data.trips) ||
-    !Array.isArray(data.fuelPurchases) ||
-    !Array.isArray(data.jurisdictionSummary)
-  ) {
-    return false;
-  }
-  // Optionally, check summary fields
-  const summary = data.summary;
-  if (
-    typeof summary.totalMiles !== 'number' ||
-    typeof summary.totalGallons !== 'number' ||
-    typeof summary.averageMpg !== 'number' ||
-    typeof summary.totalFuelCost !== 'number'
-  ) {
-    return false;
-  }
-  return true;
-}
+// validation function moved to lib/utils/ifta.ts
 

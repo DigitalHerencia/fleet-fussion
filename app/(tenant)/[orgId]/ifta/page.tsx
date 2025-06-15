@@ -62,9 +62,9 @@ function getCurrentQuarterAndYear() {
 export default async function IFTAPage({
   params,
 }: {
-  params: Promise<{ orgId: string; userId?: string }>;
+  params: { orgId: string; userId?: string };
 }) {
-  const { orgId, userId } = await params;  // Default to current quarter/year, but allow query param override in the future
+  const { orgId, userId } = params; // Default to current quarter/year, but allow query param override in the future
   const { quarter, year } = getCurrentQuarterAndYear();
   const period = `Q${quarter}`;
   let iftaData: IftaPeriodData | null = null;
