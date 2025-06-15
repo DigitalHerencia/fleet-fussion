@@ -7,17 +7,18 @@ import { TopNavBar } from '@/components/shared/TopNavBar';
 import { MainNav } from '@/components/shared/MainNav';
 import { MobileNav } from '@/components/shared/MobileNav';
 import { useUserContext } from '@/components/auth/context';
+import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 
 interface TenantLayoutProps {
   children: React.ReactNode;
-  params: Promise<{ orgId: string }>;
+  params: { orgId: string };
 }
 /**
  * Client Component for Tenant Layout
  * Receives orgId from server component and uses auth context for userId
  */
-export async function TenantLayout({ children, params }: TenantLayoutProps) {
-  const { orgId } = await params;
+export function TenantLayout({ children, params }: TenantLayoutProps) {
+  const { orgId } = params;
   const isMobile = useIsMobile();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const userContext = useUserContext();
@@ -39,11 +40,16 @@ export async function TenantLayout({ children, params }: TenantLayoutProps) {
     return (
       <div className="min-h-screen bg-gray-900">
         <header className="fixed top-0 left-0 z-50 w-full border-b border-gray-700 bg-gray-800 shadow-lg">
-          <TopNavBar user={user || {name: 'Guest', email: 'guest@example.com', profileImage: ''}} organization={organization || {name: 'Guest Organization'}}/>
+          <TopNavBar
+            user={user || { name: 'Guest', email: 'guest@example.com', profileImage: '' }}
+            organization={organization || { name: 'Guest Organization' }}
+          />
         </header>
         <div className="pt-[64px]">
           <MobileNav />
-          <main className="mx-auto w-full max-w-3xl p-4 md:p-8">{children}</main>
+          <main className="mx-auto w-full max-w-3xl p-4 md:p-8">
+            <ErrorBoundary>{children}</ErrorBoundary>
+          </main>
         </div>
       </div>
     );
@@ -68,7 +74,9 @@ export async function TenantLayout({ children, params }: TenantLayoutProps) {
         className="flex min-w-0 flex-1 flex-col transition-all duration-300"
         style={{ marginLeft: sidebarWidth }}
       >
-        <main className="flex-1 pt-16">{children}</main>
+        <main className="flex-1 pt-16">
+          <ErrorBoundary>{children}</ErrorBoundary>
+        </main>
       </div>
     </div>
   );

@@ -3,11 +3,10 @@
 import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
 
-import prisma from '@/lib/database/db';
+import db from '@/lib/database/db';
 import { handleError } from '@/lib/errors/handleError';
 import { getOrganizationKPIs } from '@/lib/fetchers/kpiFetchers';
 import type { OrganizationKPIs } from '@/types/kpi';
-import db from '@/lib/database/db';
 
 export interface DashboardActionResult<T = unknown> {
   success: boolean;
@@ -27,7 +26,7 @@ export async function getDashboardOverviewAction(): Promise<
       return { success: false, error: 'Unauthorized' };
     }
 
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { clerkId: userId },
       select: { organizationId: true, role: true },
     });
@@ -83,7 +82,7 @@ export async function getDashboardAlertsAction(
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
     // 1. Vehicle maintenance alerts
-    const vehicleMaintenanceAlerts = await prisma.vehicle.findMany({
+    const vehicleMaintenanceAlerts = await db.vehicle.findMany({
       where: {
         organizationId,
         OR: [
@@ -150,7 +149,7 @@ export async function getDashboardAlertsAction(
     });
 
     // 2. Driver license expiration alerts
-    const driverAlerts = await prisma.driver.findMany({
+    const driverAlerts = await db.driver.findMany({
       where: {
         organizationId,
         status: 'active',
@@ -213,7 +212,7 @@ export async function getDashboardAlertsAction(
     });
 
     // 3. Load-related alerts (overdue, unassigned)
-    const overdueLoads = await prisma.load.findMany({
+    const overdueLoads = await db.load.findMany({
       where: {
         organizationId,
         status: 'assigned',
@@ -306,7 +305,7 @@ export async function getTodaysScheduleAction(
     );
 
     // Get today's scheduled pickups
-    const scheduledPickups = await prisma.load.count({
+    const scheduledPickups = await db.load.count({
       where: {
         organizationId,
         scheduledPickupDate: {
@@ -320,7 +319,7 @@ export async function getTodaysScheduleAction(
     });
 
     // Get today's scheduled deliveries
-    const scheduledDeliveries = await prisma.load.count({
+    const scheduledDeliveries = await db.load.count({
       where: {
         organizationId,
         scheduledDeliveryDate: {
@@ -334,7 +333,7 @@ export async function getTodaysScheduleAction(
     });
 
     // Get vehicles scheduled for maintenance today
-    const maintenanceScheduled = await prisma.vehicle.count({
+    const maintenanceScheduled = await db.vehicle.count({
       where: {
         organizationId,
         nextInspectionDue: {
@@ -345,7 +344,7 @@ export async function getTodaysScheduleAction(
     });
 
     // Get active loads in transit
-    const loadsInTransit = await prisma.load.count({
+    const loadsInTransit = await db.load.count({
       where: {
         organizationId,
         status: 'in_transit',
@@ -458,7 +457,7 @@ export async function getDashboardPerformanceAction(
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     // Calculate on-time delivery rate
-    const totalDeliveries = await prisma.load.count({
+    const totalDeliveries = await db.load.count({
       where: {
         organizationId,
         status: 'delivered',
@@ -466,13 +465,13 @@ export async function getDashboardPerformanceAction(
       },
     });
 
-    const onTimeDeliveries = await prisma.load.count({
+    const onTimeDeliveries = await db.load.count({
       where: {
         organizationId,
         status: 'delivered',
         actualDeliveryDate: { 
           gte: thirtyDaysAgo,
-          lte: prisma.load.fields.scheduledDeliveryDate,
+          lte: db.load.fields.scheduledDeliveryDate,
         },
       },
     });
