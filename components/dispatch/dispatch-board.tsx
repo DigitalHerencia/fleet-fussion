@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PlusCircle, Filter, Wifi, WifiOff, Activity, RefreshCw, ChevronLeft, ChevronRight, Eye, BarChart3 } from 'lucide-react';
 import { useDispatchRealtime } from '@/hooks/use-dispatch-realtime';
-import { string } from 'zod';
 import type { $Enums, LoadPriority, LoadStatusEvent } from '@prisma/client';
 
 import { Badge } from '@/components/ui/badge';
