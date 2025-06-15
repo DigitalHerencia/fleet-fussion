@@ -269,10 +269,12 @@ export class RouteProtection {
       SystemRoles.DRIVER,
       SystemRoles.ADMIN,
       SystemRoles.DISPATCHER,
-      SystemRoles.COMPLIANCE,
-    ],
+      SystemRoles.COMPLIANCE,    ],
     // Dispatch dashboard: Dispatcher, Admin
     '/:orgId/dispatch/:userId': [SystemRoles.DISPATCHER, SystemRoles.ADMIN],
+    // Admin dashboard and management pages
+    '/:orgId/admin': [SystemRoles.ADMIN],
+    '/:orgId/admin/:userId': [SystemRoles.ADMIN],
     // Analytics: Admin, Dispatcher, Compliance Officer, Member (read-only)
     '/:orgId/analytics': [
       SystemRoles.ADMIN,
@@ -280,9 +282,6 @@ export class RouteProtection {
       SystemRoles.COMPLIANCE,
       SystemRoles.MEMBER,
     ],
-    // Admin dashboard: Admin only
-    '/:orgId/admin': [SystemRoles.ADMIN],
-    '/:orgId/admin/:userId': [SystemRoles.ADMIN],
     // Vehicles list: Admin, Dispatcher, Compliance (for inspections), Member
     '/:orgId/vehicles': [
       SystemRoles.ADMIN,
