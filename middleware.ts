@@ -10,6 +10,7 @@ import {
   type SystemRole,
   type Permission,
 } from '@/types/abac';
+import { enforceRateLimit } from '@/lib/utils/rate-limit';
 
 // 1. Define public routes (no auth/RBAC required)
 const publicRoutePatterns = [
@@ -29,29 +30,24 @@ const publicRoutePatterns = [
 ];
 const isPublicRoute = createRouteMatcher(publicRoutePatterns);
 
-// 2. RBAC session cache (optional, for performance)
-const sessionCache = new Map<
-  string,
-  { userContext: UserContext; timestamp: number; ttl: number }
->();
+// 2. RBAC session cache backed by Redis
+import { redis } from '@/lib/cache/redis';
 const SESSION_CACHE_TTL = 30 * 1000; // 30 seconds
 
-function getCachedUserContext(sessionId: string): UserContext | null {
-  const cached = sessionCache.get(sessionId);
-  if (cached && Date.now() - cached.timestamp < cached.ttl)
+async function getCachedUserContext(sessionId: string): Promise<UserContext | null> {
+  const cached = await redis.get<{ userContext: UserContext; timestamp: number }>(`session:${sessionId}`);
+  if (cached && Date.now() - cached.timestamp < SESSION_CACHE_TTL) {
     return cached.userContext;
-  if (cached) sessionCache.delete(sessionId);
+  }
+  if (cached) await redis.del(`session:${sessionId}`);
   return null;
 }
-function setCachedUserContext(
-  sessionId: string,
-  userContext: UserContext
-): void {
-  sessionCache.set(sessionId, {
-    userContext,
-    timestamp: Date.now(),
-    ttl: SESSION_CACHE_TTL,
-  });
+
+async function setCachedUserContext(sessionId: string, userContext: UserContext): Promise<void> {
+  await redis.set(`session:${sessionId}`,
+    { userContext, timestamp: Date.now() },
+    { ex: SESSION_CACHE_TTL / 1000 }
+  );
 }
 
 // 3. Utility: Build user context from session claims (Enhanced for custom session claims API)
@@ -183,15 +179,13 @@ function createResponseWithHeaders(
   // Security headers (additional runtime security)
   response.headers.set('X-Robots-Tag', 'noindex, nofollow');
   response.headers.set('X-Request-ID', crypto.randomUUID());
-  
-  // Rate limiting headers (basic implementation)
-  const userAgent = req.headers.get('user-agent') || '';
-  const isBot = /bot|crawler|spider|scraper/i.test(userAgent);
-  if (isBot) {
-    response.headers.set('X-RateLimit-Limit', '10');
-    response.headers.set('X-RateLimit-Remaining', '10');
-  }
-  
+
+  // Security best practices
+  response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+
   return response;
 }
 
@@ -244,6 +238,23 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
     });
   }
 
+  // Apply global rate limiting
+  const ip =
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    (req as any).ip ||
+    'unknown';
+  const rate = await enforceRateLimit(ip);
+  if (!rate.success) {
+    return new NextResponse('Too Many Requests', {
+      status: 429,
+      headers: {
+        'X-RateLimit-Limit': rate.limit.toString(),
+        'X-RateLimit-Remaining': rate.remaining.toString(),
+        'X-RateLimit-Reset': rate.reset.toString(),
+      },
+    });
+  }
+
   // [B] Check if route is public (no auth/RBAC required)
   if (isPublicRoute(req)) {
     // Allow public routes through
@@ -264,10 +275,10 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
                    (sessionClaims as any)?.publicMetadata?.organizationId || 
                    'no-org';
   const sessionId = `${userId}-${userOrgId}`;
-  let userContext = getCachedUserContext(sessionId);
+  let userContext = await getCachedUserContext(sessionId);
   if (!userContext) {
     userContext = buildUserContext(userId, sessionClaims, null); // Pass null for orgId
-    setCachedUserContext(sessionId, userContext);
+    await setCachedUserContext(sessionId, userContext);
   }
 
   // [F] Determine requested route/resource (pathname)

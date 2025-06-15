@@ -59,7 +59,7 @@
     "@react-pdf/renderer": "^4.3.0",
     "@tailwindcss/postcss": "^4.1.7",
     "@tanstack/react-table": "8.21.3",
-    "@types/chart.js": "^2.9.41",
+    "@types/chart.js": "^4.0.1",
     "@types/recharts": "^1.8.29",
     "@vercel/blob": "^1.1.1",
     "autoprefixer": "^10.4.21",
@@ -93,6 +93,8 @@
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.1.0",
     "vaul": "^1.1.2",
+    "@upstash/redis": "^1.35.0",
+    "@upstash/ratelimit": "^2.0.5",
     "zod": "3.25.28"
   },
   "devDependencies": {
@@ -110,6 +112,7 @@
     "playwright": "^1.52.0",
     "postcss": "^8.5.4",
     "prisma": "^6.8.2",
+    "@svgr/webpack": "^8.1.0",
     "tailwindcss": "^4.1.8",
     "typescript": "5.8.3",
     "vitest": "^3.2.2"

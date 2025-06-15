@@ -2,8 +2,11 @@
  * Rate Limiting Utility for FleetFusion
  *
  * Provides in-memory rate limiting functionality using a sliding window approach.
- * For production use, consider using Redis for distributed rate limiting.
+ * Also supports distributed rate limiting with Upstash Redis.
  */
+
+import { Ratelimit } from '@upstash/ratelimit';
+import { redis } from '@/lib/cache/redis';
 
 interface RateLimitConfig {
   interval: string; // e.g., '1h', '1m', '1s'
@@ -239,4 +242,17 @@ export function withRateLimit(config: RateLimitConfig) {
 
     return response;
   };
+}
+
+/**
+ * Distributed rate limiter backed by Upstash Redis
+ */
+const globalLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(50, '1 m'),
+});
+
+export async function enforceRateLimit(identifier: string): Promise<RateLimitResult> {
+  const { success, limit, remaining, reset } = await globalLimiter.limit(identifier);
+  return { success, limit, remaining, reset: reset * 1000 };
 }
