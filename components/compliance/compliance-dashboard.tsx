@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import {
   AlertTriangle,
   CheckCircle,
@@ -24,6 +24,7 @@ import { Progress } from '@/components/ui/progress';
 import { DriverComplianceTable } from './driver-compliance-table';
 import { VehicleComplianceTable } from './vehicle-compliance-table';
 import { ComplianceDocuments } from './compliance-documents';
+import { runRegulatoryAudit } from '@/lib/actions/regulatoryAuditActions';
 
 interface ComplianceDashboardProps {
   orgId: string;
@@ -31,6 +32,16 @@ interface ComplianceDashboardProps {
 
 export function ComplianceDashboard({ orgId }: ComplianceDashboardProps) {
   const [activeTab, setActiveTab] = useState('overview');
+  const [isPending, startTransition] = useTransition();
+
+  const handleAudit = () => {
+    const now = new Date();
+    const quarter = `Q${Math.floor(now.getMonth() / 3) + 1}`;
+    const year = now.getFullYear();
+    startTransition(async () => {
+      await runRegulatoryAudit(orgId, quarter, year);
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -44,7 +55,9 @@ export function ComplianceDashboard({ orgId }: ComplianceDashboardProps) {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline">Export Report</Button>
-          <Button>Run Compliance Check</Button>
+          <Button onClick={handleAudit} disabled={isPending}>
+            {isPending ? 'Running...' : 'Run Compliance Check'}
+          </Button>
         </div>
       </div>
 

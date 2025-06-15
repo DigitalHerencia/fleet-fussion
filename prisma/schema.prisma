@@ -50,6 +50,7 @@ model Organization {
   iftaTaxCalculations    IftaTaxCalculation[]
   iftaAuditLogs          IftaAuditLog[]
   iftaPDFGenerationLogs  IftaPDFGenerationLog[]
+  regulatoryAudits       RegulatoryAudit[]
 
   @@index([slug])
   @@map("organizations")
@@ -756,4 +757,18 @@ model UserPreferences {
   updatedAt           DateTime  @updatedAt
 
   @@index([userId])
+}
+
+model RegulatoryAudit {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  quarter        String
+  year           Int
+  summary        Json
+  createdAt      DateTime     @default(now()) @map("created_at")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([quarter, year])
+  @@map("regulatory_audits")
 }
