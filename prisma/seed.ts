@@ -1,6 +1,9 @@
 import { PrismaClient } from '@prisma/client';
+import { PrismaNeon } from '@prisma/adapter-neon';
 
-const prisma = new PrismaClient();
+const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL!;
+const adapter = new PrismaNeon({ connectionString });
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   // Find admin user and driver user by email (adjust emails as needed)

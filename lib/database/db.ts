@@ -10,6 +10,7 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { PrismaNeon } from '@prisma/adapter-neon';
+import { getDatabaseConfig } from '../config/environment';
 
 // Validate required environment variables
 const requiredEnvVars = ['DATABASE_URL'] as const;
@@ -20,14 +21,17 @@ for (const envVar of requiredEnvVars) {
 }
 
 // Secure connection string validation
-const connectionString = process.env.DATABASE_URL!;
+const { url, maxConnections, connectionTimeout } = getDatabaseConfig();
+const connectionString = url;
 if (!connectionString.includes('sslmode=require')) {
   console.warn('Database connection should use SSL in production');
 }
 
 // Enhanced adapter configuration with timeout and retry settings
-const adapter = new PrismaNeon({ 
+const adapter = new PrismaNeon({
   connectionString,
+  max: maxConnections,
+  connectionTimeoutMillis: connectionTimeout,
   // Neon handles pooling at infrastructure level
 });
 
@@ -68,12 +72,13 @@ const setupDatabaseMonitoring = () => {
       
       // Log slow queries for performance monitoring
       const slowQueryThreshold = parseInt(process.env.SLOW_QUERY_THRESHOLD || '1000');
-      if (duration > slowQueryThreshold) {
+      if (duration > slowQueryThreshold && params.model !== 'AuditLog') {
         console.warn(`Slow query detected: ${params.model}.${params.action} took ${duration}ms`);
-        
+
         // In production, log to audit system for performance tracking
         if (process.env.NODE_ENV === 'production') {
-          try {            await prisma.auditLog.create({
+          try {
+            await prisma.auditLog.create({
               data: {
                 organizationId: 'system',
                 entityId: 'system', // Add required entityId field
@@ -207,7 +212,7 @@ export class DatabaseQueries {
     try {
       // Look up internal IDs
       const organization = await db.organization.findUnique({
-        where: { id: organizationId },
+        where: { clerkId: organizationId },
       });
       if (!organization)
         throw new Error(
@@ -256,7 +261,7 @@ export class DatabaseQueries {
   }) {
     try {
       const organization = await db.organization.findUnique({
-        where: { id: organizationId },
+        where: { clerkId: organizationId },
       });
       if (!organization) {
         console.warn(
@@ -310,7 +315,7 @@ export class DatabaseQueries {
   }) {
     try {
       const organization = await db.organization.findFirst({
-        where: { id: clerkId },
+        where: { clerkId },
       });
       if (!organization) {
         console.warn(
@@ -370,7 +375,7 @@ export class DatabaseQueries {
         throw new Error('slug is required for organization upsert');
       const { clerkId } = data;
       const existingOrg = await db.organization.findFirst({
-        where: { id: clerkId },
+        where: { clerkId },
       });
       if (existingOrg) {
         const updateData = {
@@ -389,7 +394,7 @@ export class DatabaseQueries {
           isActive: data.isActive === undefined ? true : data.isActive,
         };
         const organization = await db.organization.update({
-          where: { id: clerkId },
+          where: { clerkId },
           data: updateData,
         });
         return organization;
@@ -440,7 +445,7 @@ export class DatabaseQueries {
                 (Array.isArray(target) && target.includes('clerkId'))
               ) {
                 const existingOrg = await db.organization.findFirst({
-                  where: { id: clerkId },
+                  where: { clerkId },
                 });
                 if (existingOrg) {
                   return existingOrg;
@@ -536,7 +541,7 @@ export class DatabaseQueries {
     try {
       console.log('[DB] deleteOrganization called with id:', clerkId);
       const organization = await db.organization.findFirst({
-        where: { id: clerkId },
+        where: { clerkId },
       });
       if (!organization) {
         console.warn(
@@ -548,7 +553,7 @@ export class DatabaseQueries {
         };
       }
       await db.organization.delete({
-        where: { id: clerkId },
+        where: { clerkId },
       });
       console.log(`[DB] Organization deleted successfully: ${clerkId}`);
       return { success: true, message: 'Organization deleted successfully' };
