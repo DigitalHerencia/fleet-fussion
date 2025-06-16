@@ -49,6 +49,7 @@
 -   [ ] PR title follows semantic format (`type: description`)
 -   [ ] Milestone assigned
 -   [ ] Labels applied
+-   [ ] I have read the [Merge Conflict Resolution Guide](../docs/merge-conflict-resolution.md)
 
 ## 🔄 Dependencies
 

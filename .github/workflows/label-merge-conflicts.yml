@@ -1,0 +1,36 @@
+# @format
+
+name: "Label PRs with Merge Conflicts"
+
+on:
+    pull_request:
+        types: [synchronize, opened, reopened, edited, ready_for_review]
+
+jobs:
+    label-conflicts:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check for merge conflicts
+              uses: actions/github-script@v7
+              with:
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  script: |
+                      const pr = context.payload.pull_request;
+                      if (pr.mergeable_state === 'dirty') {
+                        await github.rest.issues.addLabels({
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          issue_number: pr.number,
+                          labels: ['conflict']
+                        });
+                      } else {
+                        // Remove label if conflict is resolved
+                        try {
+                          await github.rest.issues.removeLabel({
+                            owner: context.repo.owner,
+                            repo: context.repo.repo,
+                            issue_number: pr.number,
+                            name: 'conflict'
+                          });
+                        } catch (e) { /* ignore if not present */ }
+                      }

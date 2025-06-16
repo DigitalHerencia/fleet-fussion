@@ -31,9 +31,9 @@ next-env.d.ts
 .DS_Store
 .vscode/
 .hintrc*
-/.notes`
 
-/generated/prisma`
+
+/generated/prisma
 !/tests
 /playwright-report
 /test-results
@@ -43,6 +43,8 @@ next-env.d.ts
 /.clerk/
 /.notes/**
 /.codex/**
+.notes
+
 
 # Custom directories
 .audits/

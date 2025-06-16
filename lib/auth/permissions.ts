@@ -331,9 +331,7 @@ export class RouteProtection {
     static canAccessRoute(user: UserContext | null, path: string): boolean {
         if (!user || user.isActive === false) {
             return false // Deny access if user is null or not active
-        }
-
-        // Helper function to match dynamic routes
+        } // Helper function to match dynamic routes
         const matchesRoute = (pattern: string, actualPath: string): boolean => {
             // Convert pattern like "/:orgId/drivers/:userId" to regex
             const regexPattern = pattern
@@ -352,7 +350,7 @@ export class RouteProtection {
 
         if (matchedRoute) {
             const requiredRoles = RouteProtection.PROTECTED_ROUTES[matchedRoute]
-            return hasAnyRole(user, requiredRoles)
+            return requiredRoles ? hasAnyRole(user, requiredRoles) : false
         }
 
         // Default to true if not in protected routes (meaning it's accessible to any authenticated, active user)

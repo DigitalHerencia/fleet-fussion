@@ -250,16 +250,17 @@ export class IFTAPDFService {
       // Table headers
       const headers = ['Date', 'Location', 'Jurisdiction', 'Gallons', 'Price/Gal', 'Total', 'Vehicle'];
       const columnWidths = [70, 120, 80, 60, 60, 70, 80];
-      let startX = 50;
-
-      for (let i = 0; i < headers.length; i++) {
-        page.drawText(headers[i], {
-          x: startX,
-          y: currentY,
-          size: 10,
-          font: boldFont
-        });
-        startX += columnWidths[i];
+      let startX = 50;      for (let i = 0; i < headers.length; i++) {
+        const header = headers[i];
+        if (header) {
+          page.drawText(header, {
+            x: startX,
+            y: currentY,
+            size: 10,
+            font: boldFont
+          });
+        }
+        startX += columnWidths[i] ?? 0;
       }
       currentY -= 20;
 
@@ -290,14 +291,13 @@ export class IFTAPDFService {
           purchase.vehicleId
         ];
 
-        for (let i = 0; i < rowData.length; i++) {
-          page.drawText(rowData[i], {
+        for (let i = 0; i < rowData.length; i++) {          page.drawText(rowData[i], {
             x: startX,
             y: currentY,
             size: 9,
             font
           });
-          startX += columnWidths[i];
+          startX += columnWidths[i] ?? 0;
         }
 
         totalGallons += purchase.gallons;
@@ -513,16 +513,17 @@ export class IFTAPDFService {
     const headers = ['Jurisdiction', 'Miles', 'Fuel Purchased', 'Tax Rate', 'Tax Due'];
     const columnWidths = [100, 80, 100, 80, 80];
     let headerY = startY - 25;
-    let startX = 50;
-
-    for (let i = 0; i < headers.length; i++) {
-      page.drawText(headers[i], {
-        x: startX,
-        y: headerY,
-        size: 10,
-        font: boldFont
-      });
-      startX += columnWidths[i];
+    let startX = 50;    for (let i = 0; i < headers.length; i++) {
+      const header = headers[i];
+      if (header) {
+        page.drawText(header, {
+          x: startX,
+          y: headerY,
+          size: 10,
+          font: boldFont
+        });
+      }
+      startX += columnWidths[i] ?? 0;
     }
 
     // Draw header line
@@ -549,12 +550,11 @@ export class IFTAPDFService {
 
         for (let i = 0; i < rowData.length; i++) {
           page.drawText(rowData[i], {
-            x: startX,
-            y: dataY,
+            x: startX,            y: dataY,
             size: 9,
             font
           });
-          startX += columnWidths[i];
+          startX += columnWidths[i] ?? 0;
         }
         dataY -= 15;
       }
