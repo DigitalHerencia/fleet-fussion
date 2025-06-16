@@ -1,0 +1,238 @@
+# @format
+
+name: 🔄 PR Automation
+on:
+    pull_request:
+        types: [opened, edited, synchronize, reopened]
+    issues:
+        types: [opened, edited, closed, reopened]
+
+jobs:
+    pr-automation:
+        name: PR Automation
+        runs-on: ubuntu-latest
+        if: github.event_name == 'pull_request'
+        permissions:
+            contents: read
+            pull-requests: write
+            issues: write
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            # Note: PR title validation is now handled by conventions.yml workflow
+            # to avoid duplication and ensure consistency across all PRs including forks
+
+            - name: Auto-label PR by branch prefix
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const { owner, repo, number } = context.issue;
+                      const pr = await github.rest.pulls.get({ owner, repo, pull_number: number });
+                      const branch = pr.data.head.ref;
+
+                      // Map branch prefixes to labels
+                      const branchToLabel = {
+                        'feature/': 'Feature',
+                        'feat/': 'Feature',
+                        'fix/': 'Bug',
+                        'bugfix/': 'Bug',
+                        'docs/': 'Documentation',
+                        'doc/': 'Documentation',
+                        'test/': 'Testing',
+                        'chore/': 'Configuration',
+                        'config/': 'Configuration',
+                        'refactor/': 'Code-Quality'
+                      };
+
+                      for (const [prefix, label] of Object.entries(branchToLabel)) {
+                        if (branch.startsWith(prefix)) {
+                          await github.rest.issues.addLabels({
+                            owner,
+                            repo,
+                            issue_number: number,
+                            labels: [label]
+                          });
+                          break;
+                        }
+                      }
+
+            - name: Add Has-PR label to referenced issues
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const { owner, repo, number } = context.issue;
+                      const pr = await github.rest.pulls.get({ owner, repo, pull_number: number });
+                      const body = pr.data.body || '';
+
+                      // Find issue references (Closes #123, Fixes #456, Resolves #789)
+                      const issueReferences = body.match(/(?:closes|fixes|resolves)\s+#(\d+)/gi);
+
+                      if (issueReferences) {
+                        for (const reference of issueReferences) {
+                          const issueNumber = reference.match(/#(\d+)/)[1];
+                          try {
+                            await github.rest.issues.addLabels({
+                              owner,
+                              repo,
+                              issue_number: parseInt(issueNumber),
+                              labels: ['Has-PR']
+                            });
+                          } catch (error) {
+                            console.log(`Could not label issue #${issueNumber}: ${error.message}`);
+                          }
+                        }
+                      }
+
+            - name: Auto-request review
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const { owner, repo, number } = context.issue;
+
+                      await github.rest.pulls.requestReviewers({
+                        owner,
+                        repo,
+                        pull_number: number,
+                        reviewers: ['DigitalHerencia']
+                      });
+
+            - name: Auto-assign priority based on labels
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const { owner, repo, number } = context.issue;
+                      const pr = await github.rest.pulls.get({ owner, repo, pull_number: number });
+                      const labels = pr.data.labels.map(label => label.name);
+
+                      // Assign priority based on PR type
+                      if (labels.includes('Bug')) {
+                        await github.rest.issues.addLabels({
+                          owner, repo, issue_number: number,
+                          labels: ['Priority-High']
+                        });
+                      } else if (labels.includes('Feature')) {
+                        await github.rest.issues.addLabels({
+                          owner, repo, issue_number: number,
+                          labels: ['Priority-Medium']
+                        });
+                      } else if (labels.includes('Documentation')) {
+                        await github.rest.issues.addLabels({
+                          owner, repo, issue_number: number,
+                          labels: ['Priority-Low']
+                        });
+                      }
+
+    dependency-tracking:
+        name: Dependency Tracking
+        runs-on: ubuntu-latest
+        if: github.event_name == 'pull_request' || github.event_name == 'issues'
+        permissions:
+            contents: read
+            pull-requests: write
+            issues: write
+
+        steps:
+            - name: Track PR dependencies
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const { owner, repo, number } = context.issue;
+
+                      if (context.eventName === 'pull_request') {
+                        const pr = await github.rest.pulls.get({ owner, repo, pull_number: number });
+                        const body = pr.data.body || '';
+                        
+                        // Find dependency references (depends on #123, blocked by #456)
+                        const dependencyReferences = body.match(/(?:depends?\s+on|blocked\s+by)\s+#(\d+)/gi);
+                        
+                        if (dependencyReferences) {
+                          for (const reference of dependencyReferences) {
+                            const issueNumber = reference.match(/#(\d+)/)[1];
+                            const isBlocked = reference.toLowerCase().includes('blocked');
+                            
+                            try {
+                              // Add dependency label to referenced issue
+                              await github.rest.issues.addLabels({
+                                owner,
+                                repo,
+                                issue_number: parseInt(issueNumber),
+                                labels: isBlocked ? ['Blocks-PR'] : ['Has-Dependent']
+                              });
+                              
+                              // Add appropriate label to current PR
+                              await github.rest.issues.addLabels({
+                                owner,
+                                repo,
+                                issue_number: number,
+                                labels: isBlocked ? ['Blocked'] : ['Has-Dependencies']
+                              });
+                            } catch (error) {
+                              console.log(`Could not process dependency #${issueNumber}: ${error.message}`);
+                            }
+                          }
+                        }
+                      }
+
+    issue-automation:
+        name: Issue Automation
+        runs-on: ubuntu-latest
+        if: github.event_name == 'issues'
+        permissions:
+            contents: read
+            issues: write
+
+        steps:
+            - name: Auto-label new issues
+              if: github.event.action == 'opened'
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const { owner, repo, number } = context.issue;
+                      const issue = await github.rest.issues.get({ owner, repo, issue_number: number });
+                      const title = issue.data.title.toLowerCase();
+                      const body = issue.data.body || '';
+
+                      // Auto-assign labels based on title/body keywords
+                      const labels = [];
+
+                      if (title.includes('bug') || title.includes('error') || title.includes('fix')) {
+                        labels.push('Bug');
+                      } else if (title.includes('feature') || title.includes('add') || title.includes('implement')) {
+                        labels.push('Feature');
+                      } else if (title.includes('doc') || title.includes('readme')) {
+                        labels.push('Documentation');
+                      } else if (title.includes('test')) {
+                        labels.push('Testing');
+                      }
+
+                      // Add priority based on urgency keywords
+                      if (title.includes('urgent') || title.includes('critical') || title.includes('crash')) {
+                        labels.push('Priority-High');
+                      } else if (title.includes('improvement') || title.includes('enhance')) {
+                        labels.push('Priority-Medium');
+                      } else {
+                        labels.push('Priority-Low');
+                      }
+
+                      if (labels.length > 0) {
+                        await github.rest.issues.addLabels({
+                          owner, repo, issue_number: number, labels
+                        });
+                      }
+
+            - name: Remove Has-PR label when issue is closed
+              if: github.event.action == 'closed'
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const { owner, repo, number } = context.issue;
+
+                      try {
+                        await github.rest.issues.removeLabel({
+                          owner, repo, issue_number: number, name: 'Has-PR'
+                        });
+                      } catch (error) {
+                        console.log(`Could not remove Has-PR label: ${error.message}`);
+                      }

@@ -1,59 +1,59 @@
 /** @format */
 
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @theme {
-  --color-background: 240 10% 3.9%;
-  --color-background-soft: 240 10% 10%;
-  --color-background-muted: 240 5% 15%;
+    --color-background: 240 10% 3.9%;
+    --color-background-soft: 240 10% 10%;
+    --color-background-muted: 240 5% 15%;
 
-  --color-foreground: 0 0% 98%;
-  --color-foreground-muted: 0 0% 63.9%;
-  --color-foreground-subtle: 0 0% 40%;
+    --color-foreground: 0 0% 98%;
+    --color-foreground-muted: 0 0% 63.9%;
+    --color-foreground-subtle: 0 0% 40%;
 
-  --color-primary: 217 91% 60%;
-  --color-primary-foreground: 0 0% 100%;
+    --color-primary: 217 91% 60%;
+    --color-primary-foreground: 0 0% 100%;
 
-  --color-secondary: 240 5% 25%;
-  --color-secondary-foreground: 0 0% 98%;
+    --color-secondary: 240 5% 25%;
+    --color-secondary-foreground: 0 0% 98%;
 
-  --color-accent: 190 80% 50%;
-  --color-accent-foreground: 240 10% 3.9%;
+    --color-accent: 190 80% 50%;
+    --color-accent-foreground: 240 10% 3.9%;
 
-  --color-destructive: 0 70% 50%;
-  --color-destructive-foreground: 0 0% 100%;
+    --color-destructive: 0 70% 50%;
+    --color-destructive-foreground: 0 0% 100%;
 
-  --color-success: 140 60% 45%;
-  --color-success-foreground: 0 0% 100%;
+    --color-success: 140 60% 45%;
+    --color-success-foreground: 0 0% 100%;
 
-  --color-warning: 45 90% 50%;
-  --color-warning-foreground: 240 10% 3.9%;
+    --color-warning: 45 90% 50%;
+    --color-warning-foreground: 240 10% 3.9%;
 
-  --color-muted: 240 5% 15%;
-  --color-muted-foreground: 0 0% 63.9%;
+    --color-muted: 240 5% 15%;
+    --color-muted-foreground: 0 0% 63.9%;
 
-  --color-border: 240 4% 20%;
-  --color-ring: 217 91% 65%;
+    --color-border: 240 4% 20%;
+    --color-ring: 217 91% 65%;
 
-  --color-input: 240 5% 18%;
+    --color-input: 240 5% 18%;
 
-  --color-card: 240 8% 12%;
-  --color-card-foreground: 0 0% 98%;
+    --color-card: 240 8% 12%;
+    --color-card-foreground: 0 0% 98%;
 
-  --color-popover: 240 10% 8%;
-  --color-popover-foreground: 0 0% 98%;
+    --color-popover: 240 10% 8%;
+    --color-popover-foreground: 0 0% 98%;
 
-  --color-chart-1: 221 83% 53%;
-  --color-chart-2: 162 70% 51%;
-  --color-chart-3: 41 97% 56%;
-  --color-chart-4: 340 82% 52%;
-  --color-chart-5: 271 91% 65%;
+    --color-chart-1: 221 83% 53%;
+    --color-chart-2: 162 70% 51%;
+    --color-chart-3: 41 97% 56%;
+    --color-chart-4: 340 82% 52%;
+    --color-chart-5: 271 91% 65%;
 
-  /* Sidebar colors */
-  --color-sidebar: 240 8% 12%;
-  --color-sidebar-foreground: 0 0% 98%;
-  --color-sidebar-border: 240 4% 20%;
-  --color-sidebar-accent: 240 5% 18%;
-  --color-sidebar-accent-foreground: 0 0% 98%;
-  --color-sidebar-ring: 217 91% 65%;
+    /* Sidebar colors */
+    --color-sidebar: 240 8% 12%;
+    --color-sidebar-foreground: 0 0% 98%;
+    --color-sidebar-border: 240 4% 20%;
+    --color-sidebar-accent: 240 5% 18%;
+    --color-sidebar-accent-foreground: 0 0% 98%;
+    --color-sidebar-ring: 217 91% 65%;
 }
